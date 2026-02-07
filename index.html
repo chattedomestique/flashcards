@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flashcards</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="noise"></div>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">FC</span>
+        <div>
+          <p class="brand-title">Flashcards</p>
+          <p class="brand-subtitle">Launch screen</p>
+        </div>
+      </div>
+      <button class="ghost-btn" type="button">Create set</button>
+    </header>
+
+    <main class="layout">
+      <section class="panel intro" aria-labelledby="launch-title">
+        <div class="panel-header">
+          <p class="kicker">Pick a deck</p>
+          <h1 id="launch-title">What would you like to study?</h1>
+          <p class="intro-copy">
+            Start with curated sets, or jump into your own in a future update.
+            Every deck uses bold visuals, clear prompts, and quick rhythm.
+          </p>
+        </div>
+        <ul class="set-list" role="list">
+          <li>
+            <button class="set-card is-active" type="button" data-set="Shapes">
+              <span class="set-name">Shapes</span>
+              <span class="set-meta">12 cards · Visual basics</span>
+            </button>
+          </li>
+          <li>
+            <button class="set-card" type="button" data-set="Colors">
+              <span class="set-name">Colors</span>
+              <span class="set-meta">Coming soon</span>
+            </button>
+          </li>
+          <li>
+            <button class="set-card" type="button" data-set="Textures">
+              <span class="set-name">Textures</span>
+              <span class="set-meta">Coming soon</span>
+            </button>
+          </li>
+          <li>
+            <button class="set-card" type="button" data-set="Motion">
+              <span class="set-name">Motion</span>
+              <span class="set-meta">Coming soon</span>
+            </button>
+          </li>
+        </ul>
+      </section>
+
+      <section class="panel preview" aria-labelledby="preview-title">
+        <div class="panel-header">
+          <p class="kicker">Deck preview</p>
+          <h2 id="preview-title">Shapes</h2>
+          <p class="intro-copy">
+            Train recognition for core geometry. Tap a card to flip it, then move to
+            the next.
+          </p>
+        </div>
+
+        <div class="card-stack" aria-live="polite">
+          <div class="flashcard" role="button" tabindex="0" aria-label="Flip flashcard">
+            <div class="flashcard-face flashcard-front">
+              <span class="flashcard-label">Square</span>
+              <div class="shape square"></div>
+            </div>
+            <div class="flashcard-face flashcard-back">
+              <p>Four equal sides, four right angles.</p>
+            </div>
+          </div>
+          <div class="flashcard ghost"></div>
+          <div class="flashcard ghost"></div>
+        </div>
+
+        <div class="actions">
+          <button class="primary-btn" type="button">Start deck</button>
+          <button class="secondary-btn" type="button">Shuffle</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Flashcards v0.1 · Neo-brutal edition</p>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
