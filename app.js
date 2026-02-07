@@ -43,7 +43,7 @@ const LOADER_PAUSE = 300;
 const LOADER_STEPS = 3;
 const LOADER_DURATION = LOADER_SEGMENT * LOADER_STEPS + LOADER_PAUSE * (LOADER_STEPS - 1);
 let loaderTimeline = null;
-const LOADER_EASE = "easeInOutSine";
+const LOADER_EASE = "cubicBezier(0.42, 0, 0.58, 1)";
 
 const SHAPES = {
   blob:
@@ -66,6 +66,7 @@ const playLoaderAnimation = () => {
 
   loaderSvg.style.fill = SHAPE_COLORS[0];
   loaderRotator.style.transform = "rotate(0deg)";
+  loaderPath.setAttribute("d", SHAPES.blob);
 
   const segment = LOADER_SEGMENT;
   const pause = LOADER_PAUSE;
