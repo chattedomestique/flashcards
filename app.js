@@ -4,6 +4,8 @@ const cardScreen = document.querySelector(".card-screen");
 const loadingScreen = document.querySelector(".loading-screen");
 const loadingCard = document.querySelector(".loading-card");
 const loadingSet = document.querySelector(".loading-set");
+const loaderPath = document.querySelector(".loader-path");
+const loaderSvg = document.querySelector(".loader-svg");
 const menuItems = document.querySelectorAll(".menu-item");
 const flashcard = document.querySelector(".flashcard");
 const flashcardLabel = document.querySelector(".flashcard-label");
@@ -35,7 +37,117 @@ const sets = {
 
 let isTransitioning = false;
 let loadingTimer = null;
-const LOADER_DURATION = 2400;
+const LOADER_SEGMENT = 1200;
+const LOADER_PAUSE = 300;
+const LOADER_STEPS = 3;
+const LOADER_DURATION = LOADER_SEGMENT * LOADER_STEPS + LOADER_PAUSE * (LOADER_STEPS - 1);
+let loaderTimeline = null;
+
+const SHAPES = {
+  blob:
+    "M 7.7423617,6.5524041 C 0.14213171,13.241204 -0.28352929,25.218399 6.5488487,32.446038 13.237649,40.04627 24.578354,40.568996 32.442483,33.639553 39.813699,26.434583 40.216105,14.96193 33.635997,7.7459191 26.935569,0.39795815 15.101951,-0.40029585 7.7423617,6.5524041 Z",
+  square:
+    "M 1.4639006,1.6816009 C 1.4129866,11.374999 1.1386316,31.038516 1.2037966,39.132841 10.361482,39.005187 29.91693,39.467197 38.833611,39.035804 39.621131,30.764045 38.910573,9.4542879 39.093715,1.2274189 30.247144,1.2462399 8.8125376,1.8724369 1.4639006,1.6816009 Z",
+  wedge:
+    "M 19.499615,1.5030295 C 15.341558,11.017856 5.4243459,31.217087 1.2037966,39.132841 10.361482,39.005187 29.91693,39.467197 38.833611,39.035804 34.978274,30.942616 24.624859,11.418574 20.165144,1.5845618 18.73688,1.6665173 20.913606,1.4728946 19.499615,1.5030295 Z",
+};
+
+const SHAPE_COLORS = ["#2d7dff", "#7ef9c8", "#ff6b6b"];
+
+const playLoaderAnimation = () => {
+  if (!window.anime || !loaderPath || !loaderSvg) return;
+
+  if (loaderTimeline) {
+    loaderTimeline.pause();
+    loaderTimeline = null;
+  }
+
+  loaderSvg.style.fill = SHAPE_COLORS[0];
+
+  const segment = LOADER_SEGMENT;
+  const pause = LOADER_PAUSE;
+  const step = segment + pause;
+
+  loaderTimeline = window.anime
+    .timeline({
+      autoplay: false,
+      easing: "easeInOutQuad",
+    })
+    .add(
+      {
+        targets: loaderPath,
+        d: [{ value: SHAPES.square }],
+        duration: segment,
+      },
+      0
+    )
+    .add(
+      {
+        targets: loaderSvg,
+        rotate: [0, 120],
+        duration: segment,
+      },
+      0
+    )
+    .add(
+      {
+        targets: loaderSvg,
+        fill: [{ value: SHAPE_COLORS[1] }],
+        duration: segment,
+      },
+      0
+    )
+    .add(
+      {
+        targets: loaderPath,
+        d: [{ value: SHAPES.wedge }],
+        duration: segment,
+      },
+      step
+    )
+    .add(
+      {
+        targets: loaderSvg,
+        rotate: [120, 240],
+        duration: segment,
+      },
+      step
+    )
+    .add(
+      {
+        targets: loaderSvg,
+        fill: [{ value: SHAPE_COLORS[2] }],
+        duration: segment,
+      },
+      step
+    )
+    .add(
+      {
+        targets: loaderPath,
+        d: [{ value: SHAPES.blob }],
+        duration: segment,
+      },
+      step * 2
+    )
+    .add(
+      {
+        targets: loaderSvg,
+        rotate: [240, 360],
+        duration: segment,
+      },
+      step * 2
+    )
+    .add(
+      {
+        targets: loaderSvg,
+        fill: [{ value: SHAPE_COLORS[0] }],
+        duration: segment,
+      },
+      step * 2
+    );
+
+  loaderTimeline.play();
+};
 
 const setActiveMenu = (selected) => {
   menuItems.forEach((item) => {
@@ -83,6 +195,8 @@ const startLoading = (setKey, target) => {
       loadingCard.classList.add("is-flipped");
     });
   });
+
+  playLoaderAnimation();
 
   clearTimeout(loadingTimer);
   loadingTimer = window.setTimeout(() => {
