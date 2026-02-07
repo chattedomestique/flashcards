@@ -35,6 +35,7 @@ const sets = {
 
 let isTransitioning = false;
 let loadingTimer = null;
+const LOADER_DURATION = 2400;
 
 const setActiveMenu = (selected) => {
   menuItems.forEach((item) => {
@@ -86,7 +87,7 @@ const startLoading = (setKey, target) => {
   clearTimeout(loadingTimer);
   loadingTimer = window.setTimeout(() => {
     showCard(setKey);
-  }, 1200);
+  }, LOADER_DURATION);
 };
 
 menuItems.forEach((item) => {
