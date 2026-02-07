@@ -43,7 +43,7 @@ const LOADER_PAUSE = 300;
 const LOADER_STEPS = 3;
 const LOADER_DURATION = LOADER_SEGMENT * LOADER_STEPS + LOADER_PAUSE * (LOADER_STEPS - 1);
 let loaderTimeline = null;
-const LOADER_EASE = "cubicBezier(0.42, 0, 0.58, 1)";
+const LOADER_EASE = "easeInOutQuad";
 
 const SHAPES = {
   blob:
@@ -81,6 +81,7 @@ const playLoaderAnimation = () => {
       {
         targets: loaderPath,
         d: [{ value: SHAPES.square }],
+        easing: LOADER_EASE,
         duration: segment,
       },
       0
@@ -89,6 +90,7 @@ const playLoaderAnimation = () => {
       {
         targets: loaderRotator,
         rotate: [0, 120],
+        easing: LOADER_EASE,
         duration: segment,
       },
       0
@@ -97,6 +99,7 @@ const playLoaderAnimation = () => {
       {
         targets: loaderSvg,
         fill: [{ value: SHAPE_COLORS[1] }],
+        easing: LOADER_EASE,
         duration: segment,
       },
       0
@@ -105,6 +108,7 @@ const playLoaderAnimation = () => {
       {
         targets: loaderPath,
         d: [{ value: SHAPES.wedge }],
+        easing: LOADER_EASE,
         duration: segment,
       },
       step
@@ -113,6 +117,7 @@ const playLoaderAnimation = () => {
       {
         targets: loaderRotator,
         rotate: [120, 240],
+        easing: LOADER_EASE,
         duration: segment,
       },
       step
@@ -121,6 +126,7 @@ const playLoaderAnimation = () => {
       {
         targets: loaderSvg,
         fill: [{ value: SHAPE_COLORS[2] }],
+        easing: LOADER_EASE,
         duration: segment,
       },
       step
@@ -129,6 +135,7 @@ const playLoaderAnimation = () => {
       {
         targets: loaderPath,
         d: [{ value: SHAPES.blob }],
+        easing: LOADER_EASE,
         duration: segment,
       },
       step * 2
@@ -137,6 +144,7 @@ const playLoaderAnimation = () => {
       {
         targets: loaderRotator,
         rotate: [240, 360],
+        easing: LOADER_EASE,
         duration: segment,
       },
       step * 2
@@ -146,6 +154,7 @@ const playLoaderAnimation = () => {
     {
       targets: loaderSvg,
       fill: [{ value: SHAPE_COLORS[0] }],
+      easing: LOADER_EASE,
       duration: segment,
     },
     step * 2
