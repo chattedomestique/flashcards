@@ -6,3 +6,33 @@ menuItems.forEach((item) => {
     item.classList.add("is-active");
   });
 });
+
+document.addEventListener(
+  "touchmove",
+  (event) => {
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+  },
+  { passive: false }
+);
+
+document.addEventListener(
+  "wheel",
+  (event) => {
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+  },
+  { passive: false }
+);
+
+const preventGesture = (event) => {
+  if (event.cancelable) {
+    event.preventDefault();
+  }
+};
+
+document.addEventListener("gesturestart", preventGesture, { passive: false });
+document.addEventListener("gesturechange", preventGesture, { passive: false });
+document.addEventListener("gestureend", preventGesture, { passive: false });

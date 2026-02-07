@@ -14,12 +14,35 @@
   box-sizing: border-box;
 }
 
+button {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+}
+
 body {
   margin: 0;
   font-family: "Space Grotesk", system-ui, sans-serif;
   color: var(--ink);
   background: linear-gradient(135deg, #fff1b9 0%, #ffd1dc 52%, #cfeeff 100%);
   min-height: 100vh;
+  touch-action: none;
+  position: fixed;
+  inset: 0;
+  width: 100%;
 }
 
 .noise {
@@ -33,6 +56,7 @@ body {
 
 .screen {
   min-height: 100vh;
+  height: 100%;
   display: grid;
   place-items: center;
   padding: 28px 20px;
@@ -46,6 +70,7 @@ body {
   box-shadow: var(--shadow);
   padding: 32px 26px 36px;
   text-align: center;
+  color: var(--ink);
   animation: slideUp 0.6s ease both;
 }
 
@@ -55,6 +80,7 @@ body {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: lowercase;
+  color: var(--ink);
 }
 
 .menu {
@@ -78,6 +104,12 @@ body {
   box-shadow: var(--shadow);
   cursor: pointer;
   transition: transform 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  touch-action: manipulation;
+  color: var(--ink);
 }
 
 .menu-item:hover {
