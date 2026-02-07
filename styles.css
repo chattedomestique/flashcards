@@ -227,6 +227,14 @@ body {
   overflow: visible;
 }
 
+.loader-rotator {
+  width: 84px;
+  height: 84px;
+  display: grid;
+  place-items: center;
+  transform-origin: 50% 50%;
+}
+
 .loader-svg {
   width: 84px;
   height: 84px;
