@@ -54,15 +54,29 @@ body {
   mix-blend-mode: multiply;
 }
 
-.screen {
-  min-height: 100vh;
+.app {
+  position: relative;
   height: 100%;
+  color: var(--ink);
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
   display: grid;
   place-items: center;
   padding: 28px 20px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-.launch {
+.screen[aria-hidden="true"] {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+}
+
+.launch,
+.card-panel {
   width: min(420px, 92vw);
   border: var(--border);
   border-radius: var(--radius);
@@ -103,7 +117,7 @@ body {
   letter-spacing: 0.06em;
   box-shadow: var(--shadow);
   cursor: pointer;
-  transition: transform 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -112,17 +126,213 @@ body {
   color: var(--ink);
 }
 
-.menu-item:hover {
+.menu-item:hover,
+.menu-item.is-pressed {
   transform: translate(-2px, -2px);
+}
+
+.menu-item:active {
+  transform: translate(4px, 4px);
+  box-shadow: 2px 2px 0 #000000;
 }
 
 .menu-item.is-active {
   background: var(--mint);
 }
 
-.menu-item:focus-visible {
+.menu-item:focus-visible,
+.flashcard:focus-visible,
+.ghost-btn:focus-visible {
   outline: 3px dashed var(--accent-2);
   outline-offset: 4px;
+}
+
+.loading-screen {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  transition: opacity 0.3s ease;
+  z-index: 3;
+}
+
+.loading-screen[aria-hidden="true"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-card {
+  width: min(320px, 82vw);
+  height: 220px;
+  border: var(--border);
+  border-radius: 20px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.16, 0.8, 0.4, 1);
+}
+
+.loading-card.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.loading-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  padding: 24px;
+  backface-visibility: hidden;
+}
+
+.loading-front {
+  font-weight: 700;
+  text-transform: lowercase;
+  letter-spacing: 0.08em;
+}
+
+.loading-title {
+  margin: 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.loading-set {
+  margin: 0;
+  font-size: 28px;
+}
+
+.loading-back {
+  transform: rotateY(180deg);
+  text-transform: lowercase;
+  letter-spacing: 0.08em;
+}
+
+.loader-text {
+  margin: 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.loader-shape {
+  width: 78px;
+  height: 78px;
+  background: var(--accent-2);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  animation: morphSpin 1.2s ease-in-out infinite;
+}
+
+@keyframes morphSpin {
+  0%,
+  22% {
+    transform: rotate(0deg) scale(1);
+    border-radius: 12px;
+  }
+  45% {
+    transform: rotate(160deg) scale(1.08);
+    border-radius: 45%;
+  }
+  70% {
+    transform: rotate(260deg) scale(0.96);
+    border-radius: 6px;
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    border-radius: 16px;
+  }
+}
+
+.card-panel {
+  display: grid;
+  gap: 20px;
+}
+
+.deck-label {
+  margin: 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 700;
+}
+
+.flashcard {
+  border: var(--border);
+  border-radius: 18px;
+  background: var(--paper);
+  min-height: 230px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+  cursor: pointer;
+}
+
+.flashcard.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.flashcard-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  backface-visibility: hidden;
+  padding: 24px;
+}
+
+.flashcard-back {
+  transform: rotateY(180deg);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.flashcard-label {
+  font-size: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.shape {
+  width: 90px;
+  height: 90px;
+  border: var(--border);
+  background: var(--accent);
+  box-shadow: var(--shadow);
+}
+
+.square {
+  border-radius: 12px;
+}
+
+.circle {
+  border-radius: 50%;
+}
+
+.diamond {
+  transform: rotate(45deg);
+}
+
+.ghost-btn {
+  border: var(--border);
+  border-radius: 14px;
+  padding: 12px 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  background: var(--paper);
 }
 
 @keyframes slideUp {
@@ -137,7 +347,8 @@ body {
 }
 
 @media (max-width: 520px) {
-  .launch {
+  .launch,
+  .card-panel {
     padding: 28px 22px 32px;
   }
 

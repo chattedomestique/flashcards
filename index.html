@@ -15,22 +15,55 @@
   <body>
     <div class="noise"></div>
 
-    <main class="screen">
-      <section class="launch" aria-label="Flashcard sets">
-        <h1 class="title">flashcards</h1>
-        <ul class="menu" role="list">
-          <li>
-            <button class="menu-item is-active" type="button">shapes</button>
-          </li>
-          <li>
-            <button class="menu-item" type="button">numbers</button>
-          </li>
-          <li>
-            <button class="menu-item" type="button">letters</button>
-          </li>
-        </ul>
-      </section>
-    </main>
+    <div class="app" data-state="menu">
+      <main class="screen menu-screen" aria-label="Flashcard sets">
+        <section class="launch">
+          <h1 class="title">flashcards</h1>
+          <ul class="menu" role="list">
+            <li>
+              <button class="menu-item is-active" type="button" data-set="shapes">
+                shapes
+              </button>
+            </li>
+            <li>
+              <button class="menu-item" type="button" data-set="numbers">numbers</button>
+            </li>
+            <li>
+              <button class="menu-item" type="button" data-set="letters">letters</button>
+            </li>
+          </ul>
+        </section>
+      </main>
+
+      <main class="screen card-screen" aria-hidden="true">
+        <section class="card-panel">
+          <p class="deck-label">shapes deck</p>
+          <div class="flashcard" role="button" tabindex="0" aria-label="Flip flashcard">
+            <div class="flashcard-face flashcard-front">
+              <span class="flashcard-label">Square</span>
+              <div class="shape square"></div>
+            </div>
+            <div class="flashcard-face flashcard-back">
+              <p>Four equal sides, four right angles.</p>
+            </div>
+          </div>
+          <button class="ghost-btn back-btn" type="button">Back</button>
+        </section>
+      </main>
+
+      <div class="loading-screen" aria-hidden="true">
+        <div class="loading-card" aria-live="polite">
+          <div class="loading-face loading-front">
+            <p class="loading-title">loading deck</p>
+            <p class="loading-set">shapes</p>
+          </div>
+          <div class="loading-face loading-back">
+            <div class="loader-shape" aria-hidden="true"></div>
+            <p class="loader-text">prepping cards</p>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script src="app.js"></script>
   </body>
