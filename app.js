@@ -6,6 +6,7 @@ const loadingCard = document.querySelector(".loading-card");
 const loadingSet = document.querySelector(".loading-set");
 const loaderPath = document.querySelector(".loader-path");
 const loaderSvg = document.querySelector(".loader-svg");
+const loaderRotator = document.querySelector(".loader-rotator");
 const menuItems = document.querySelectorAll(".menu-item");
 const flashcard = document.querySelector(".flashcard");
 const flashcardLabel = document.querySelector(".flashcard-label");
@@ -42,7 +43,7 @@ const LOADER_PAUSE = 300;
 const LOADER_STEPS = 3;
 const LOADER_DURATION = LOADER_SEGMENT * LOADER_STEPS + LOADER_PAUSE * (LOADER_STEPS - 1);
 let loaderTimeline = null;
-const LOADER_EASE = "cubicBezier(0.16, 1.35, 0.3, 1)";
+const LOADER_EASE = "easeInOutSine";
 
 const SHAPES = {
   blob:
@@ -56,7 +57,7 @@ const SHAPES = {
 const SHAPE_COLORS = ["#2d7dff", "#7ef9c8", "#ff6b6b"];
 
 const playLoaderAnimation = () => {
-  if (!window.anime || !loaderPath || !loaderSvg) return;
+  if (!window.anime || !loaderPath || !loaderSvg || !loaderRotator) return;
 
   if (loaderTimeline) {
     loaderTimeline.pause();
@@ -64,6 +65,7 @@ const playLoaderAnimation = () => {
   }
 
   loaderSvg.style.fill = SHAPE_COLORS[0];
+  loaderRotator.style.transform = "rotate(0deg)";
 
   const segment = LOADER_SEGMENT;
   const pause = LOADER_PAUSE;
@@ -84,7 +86,7 @@ const playLoaderAnimation = () => {
     )
     .add(
       {
-        targets: loaderSvg,
+        targets: loaderRotator,
         rotate: [0, 120],
         duration: segment,
       },
@@ -100,14 +102,6 @@ const playLoaderAnimation = () => {
     )
     .add(
       {
-        targets: loaderSvg,
-        scale: [1, 1.12, 1],
-        duration: segment,
-      },
-      0
-    )
-    .add(
-      {
         targets: loaderPath,
         d: [{ value: SHAPES.wedge }],
         duration: segment,
@@ -116,7 +110,7 @@ const playLoaderAnimation = () => {
     )
     .add(
       {
-        targets: loaderSvg,
+        targets: loaderRotator,
         rotate: [120, 240],
         duration: segment,
       },
@@ -132,14 +126,6 @@ const playLoaderAnimation = () => {
     )
     .add(
       {
-        targets: loaderSvg,
-        scale: [1, 1.12, 1],
-        duration: segment,
-      },
-      step
-    )
-    .add(
-      {
         targets: loaderPath,
         d: [{ value: SHAPES.blob }],
         duration: segment,
@@ -148,16 +134,8 @@ const playLoaderAnimation = () => {
     )
     .add(
       {
-        targets: loaderSvg,
+        targets: loaderRotator,
         rotate: [240, 360],
-        duration: segment,
-      },
-      step * 2
-    )
-    .add(
-      {
-        targets: loaderSvg,
-        fill: [{ value: SHAPE_COLORS[0] }],
         duration: segment,
       },
       step * 2
@@ -166,7 +144,7 @@ const playLoaderAnimation = () => {
   loaderTimeline.add(
     {
       targets: loaderSvg,
-      scale: [1, 1.12, 1],
+      fill: [{ value: SHAPE_COLORS[0] }],
       duration: segment,
     },
     step * 2
