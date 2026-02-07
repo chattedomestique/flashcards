@@ -42,6 +42,7 @@ const LOADER_PAUSE = 300;
 const LOADER_STEPS = 3;
 const LOADER_DURATION = LOADER_SEGMENT * LOADER_STEPS + LOADER_PAUSE * (LOADER_STEPS - 1);
 let loaderTimeline = null;
+const LOADER_EASE = "cubicBezier(0.16, 1.35, 0.3, 1)";
 
 const SHAPES = {
   blob:
@@ -71,7 +72,7 @@ const playLoaderAnimation = () => {
   loaderTimeline = window.anime
     .timeline({
       autoplay: false,
-      easing: "easeInOutQuad",
+      easing: LOADER_EASE,
     })
     .add(
       {
@@ -93,6 +94,14 @@ const playLoaderAnimation = () => {
       {
         targets: loaderSvg,
         fill: [{ value: SHAPE_COLORS[1] }],
+        duration: segment,
+      },
+      0
+    )
+    .add(
+      {
+        targets: loaderSvg,
+        scale: [1, 1.12, 1],
         duration: segment,
       },
       0
@@ -123,6 +132,14 @@ const playLoaderAnimation = () => {
     )
     .add(
       {
+        targets: loaderSvg,
+        scale: [1, 1.12, 1],
+        duration: segment,
+      },
+      step
+    )
+    .add(
+      {
         targets: loaderPath,
         d: [{ value: SHAPES.blob }],
         duration: segment,
@@ -145,6 +162,15 @@ const playLoaderAnimation = () => {
       },
       step * 2
     );
+
+  loaderTimeline.add(
+    {
+      targets: loaderSvg,
+      scale: [1, 1.12, 1],
+      duration: segment,
+    },
+    step * 2
+  );
 
   loaderTimeline.play();
 };

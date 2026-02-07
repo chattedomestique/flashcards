@@ -172,6 +172,7 @@ body {
   position: relative;
   transform-style: preserve-3d;
   transition: transform 0.7s cubic-bezier(0.16, 0.8, 0.4, 1);
+  overflow: visible;
 }
 
 .loading-card.is-flipped {
@@ -186,6 +187,7 @@ body {
   gap: 12px;
   padding: 24px;
   backface-visibility: hidden;
+  overflow: visible;
 }
 
 .loading-front {
@@ -222,6 +224,7 @@ body {
 .loader-art {
   display: grid;
   place-items: center;
+  overflow: visible;
 }
 
 .loader-svg {
@@ -232,6 +235,7 @@ body {
   stroke-width: 1.5px;
   paint-order: stroke fill;
   filter: drop-shadow(8px 8px 0 #000000);
+  overflow: visible;
 }
 
 .card-panel {
