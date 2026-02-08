@@ -9,6 +9,7 @@ const flashcardBack = document.querySelector(".flashcard-back p");
 const flashcardShape = document.querySelector(".shape");
 const deckLabel = document.querySelector(".deck-label");
 const backButton = document.querySelector(".back-btn");
+const toneToggle = document.querySelector(".toggle-btn");
 
 const sets = {
   shapes: {
@@ -32,6 +33,11 @@ const sets = {
 };
 
 let isTransitioning = false;
+let audioContext = null;
+let toneInterval = null;
+const TONE_FREQUENCY = 440;
+const TONE_DURATION = 0.1;
+const TONE_INTERVAL = 0.3;
 
 const setActiveMenu = (selected) => {
   menuItems.forEach((item) => {
@@ -108,3 +114,63 @@ cardRotator.addEventListener("animationend", (event) => {
   cardRotator.classList.remove("is-spinning");
   isTransitioning = false;
 });
+
+const ensureAudioContext = () => {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioContext.state === "suspended") {
+    audioContext.resume();
+  }
+};
+
+const playTone = () => {
+  if (!audioContext) return;
+  const now = audioContext.currentTime;
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+
+  oscillator.type = "sine";
+  oscillator.frequency.value = TONE_FREQUENCY;
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.linearRampToValueAtTime(0.3, now + 0.01);
+  gain.gain.linearRampToValueAtTime(0.0001, now + TONE_DURATION);
+
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+
+  oscillator.start(now);
+  oscillator.stop(now + TONE_DURATION + 0.02);
+};
+
+const startToneLoop = () => {
+  if (toneInterval) return;
+  playTone();
+  toneInterval = window.setInterval(playTone, TONE_INTERVAL * 1000);
+};
+
+const stopToneLoop = () => {
+  if (!toneInterval) return;
+  window.clearInterval(toneInterval);
+  toneInterval = null;
+};
+
+const setToneState = (isOn) => {
+  toneToggle.classList.toggle("is-on", isOn);
+  toneToggle.setAttribute("aria-pressed", String(isOn));
+  toneToggle.textContent = isOn ? "tone: on" : "tone: off";
+
+  if (isOn) {
+    ensureAudioContext();
+    startToneLoop();
+  } else {
+    stopToneLoop();
+  }
+};
+
+if (toneToggle) {
+  toneToggle.addEventListener("click", () => {
+    const nextState = !toneToggle.classList.contains("is-on");
+    setToneState(nextState);
+  });
+}

@@ -196,9 +196,32 @@ body {
 
 .menu-item:focus-visible,
 .flashcard:focus-visible,
-.ghost-btn:focus-visible {
+.ghost-btn:focus-visible,
+.toggle-btn:focus-visible {
   outline: 3px dashed var(--accent-2);
   outline-offset: 4px;
+}
+
+.toggle-btn {
+  border: var(--border);
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  background: var(--paper);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.toggle-btn.is-on {
+  background: var(--accent-3);
+}
+
+.toggle-btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: 2px 2px 0 #000000;
 }
 
 
