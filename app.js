@@ -4,8 +4,6 @@ const cardScreen = document.querySelector(".card-screen");
 const loadingScreen = document.querySelector(".loading-screen");
 const loadingCard = document.querySelector(".loading-card");
 const loadingSet = document.querySelector(".loading-set");
-const loaderPath = document.querySelector("#loader-path");
-const loaderSvg = document.querySelector(".loader-svg");
 const loaderRotator = document.querySelector(".loader-rotator");
 const menuItems = document.querySelectorAll(".menu-item");
 const flashcard = document.querySelector(".flashcard");
@@ -38,58 +36,14 @@ const sets = {
 
 let isTransitioning = false;
 let loadingTimer = null;
-const LOADER_SEGMENT_MS = 1200;
-const LOADER_PAUSE_MS = 300;
-const LOADER_STEPS = 3;
-const LOADER_DURATION =
-  LOADER_SEGMENT_MS * LOADER_STEPS + LOADER_PAUSE_MS * (LOADER_STEPS - 1);
-let loaderTimeline = null;
-const LOADER_EASE = "power1.inOut";
-
-const SHAPE_COLORS = ["#2d7dff", "#7ef9c8", "#ff6b6b"];
+const LOADER_DURATION = 4200;
 
 const playLoaderAnimation = () => {
-  if (!window.gsap || !window.MorphSVGPlugin || !loaderPath || !loaderSvg || !loaderRotator) {
-    return;
-  }
+  if (!loaderRotator) return;
 
-  window.gsap.registerPlugin(window.MorphSVGPlugin);
-
-  if (loaderTimeline) {
-    loaderTimeline.kill();
-    loaderTimeline = null;
-  }
-
-  const segment = LOADER_SEGMENT_MS / 1000;
-  const pause = LOADER_PAUSE_MS / 1000;
-
-  window.gsap.set(loaderRotator, { rotation: 0, transformOrigin: "50% 50%" });
-  window.gsap.set(loaderSvg, { fill: SHAPE_COLORS[0] });
-  window.gsap.set(loaderPath, { morphSVG: "#loader-blob" });
-
-  loaderTimeline = window.gsap.timeline({
-    paused: true,
-    defaults: { ease: LOADER_EASE, duration: segment },
-  });
-
-  loaderTimeline
-    .to(
-      loaderPath,
-      { morphSVG: { shape: "#loader-square", type: "rotational" } },
-      0
-    )
-    .to(loaderRotator, { rotation: 120 }, 0)
-    .to(loaderSvg, { fill: SHAPE_COLORS[1] }, 0)
-    .to({}, { duration: pause })
-    .to(loaderPath, { morphSVG: { shape: "#loader-wedge", type: "rotational" } })
-    .to(loaderRotator, { rotation: 240 }, "<")
-    .to(loaderSvg, { fill: SHAPE_COLORS[2] }, "<")
-    .to({}, { duration: pause })
-    .to(loaderPath, { morphSVG: { shape: "#loader-blob", type: "rotational" } })
-    .to(loaderRotator, { rotation: 360 }, "<")
-    .to(loaderSvg, { fill: SHAPE_COLORS[0] }, "<");
-
-  loaderTimeline.play(0);
+  loaderRotator.classList.remove("is-animating");
+  void loaderRotator.offsetWidth;
+  loaderRotator.classList.add("is-animating");
 };
 
 const setActiveMenu = (selected) => {

@@ -235,19 +235,29 @@ body {
   transform-origin: 50% 50%;
 }
 
-.loader-svg {
-  width: 84px;
-  height: 84px;
-  fill: var(--accent-2);
-  stroke: var(--ink);
-  stroke-width: 1.5px;
-  paint-order: stroke fill;
-  filter: drop-shadow(8px 8px 0 #000000);
-  overflow: visible;
+.loader-rotator.is-animating {
+  animation: loaderSpin 1.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
 
-.loader-hidden {
-  visibility: hidden;
+.loader-block {
+  width: 78px;
+  height: 78px;
+  background: var(--accent-2);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  border-radius: 14px;
+}
+
+@keyframes loaderSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(180deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .card-panel {
