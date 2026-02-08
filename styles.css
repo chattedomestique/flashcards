@@ -83,15 +83,17 @@ body {
   height: 100%;
   display: grid;
   place-items: center;
+  perspective: 1200px;
 }
 
 .card-rotator {
   transform-origin: center;
   will-change: transform;
+  transform-style: preserve-3d;
 }
 
 .card-rotator.is-spinning {
-  animation: cardSpin 1.2s var(--ease-playful) 1;
+  animation: cardFlip 1.2s var(--ease-playful) 1;
 }
 
 .card-shell {
@@ -129,6 +131,14 @@ body {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
+}
+
+.app[data-state="card"] .deck-panel {
+  transition-delay: 0.15s;
+}
+
+.app[data-state="card"] .menu-panel {
+  transition-delay: 0s;
 }
 
 .title {
@@ -285,12 +295,12 @@ body {
   }
 }
 
-@keyframes cardSpin {
+@keyframes cardFlip {
   0% {
-    transform: rotate(0deg);
+    transform: rotateY(0deg);
   }
   100% {
-    transform: rotate(720deg);
+    transform: rotateY(720deg);
   }
 }
 

@@ -104,7 +104,7 @@ backButton.addEventListener("click", () => {
 });
 
 cardRotator.addEventListener("animationend", (event) => {
-  if (event.animationName !== "cardSpin") return;
+  if (event.animationName !== "cardFlip") return;
   cardRotator.classList.remove("is-spinning");
   isTransitioning = false;
 });
