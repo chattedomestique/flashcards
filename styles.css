@@ -246,6 +246,10 @@ body {
   overflow: visible;
 }
 
+.loader-hidden {
+  visibility: hidden;
+}
+
 .card-panel {
   display: grid;
   gap: 20px;
