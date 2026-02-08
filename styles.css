@@ -8,6 +8,7 @@
   --shadow: 8px 8px 0 #000000;
   --border: 3px solid var(--ink);
   --radius: 18px;
+  --ease-playful: cubic-bezier(0.16, 1.35, 0.32, 1);
 }
 
 * {
@@ -236,7 +237,7 @@ body {
 }
 
 .loader-rotator.is-animating {
-  animation: loaderSpin 1.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation: loaderSpin 1.6s var(--ease-playful) infinite;
 }
 
 .loader-block {
@@ -251,9 +252,11 @@ body {
 @keyframes loaderSpin {
   0% {
     transform: rotate(0deg);
+    animation-timing-function: var(--ease-playful);
   }
   50% {
     transform: rotate(180deg);
+    animation-timing-function: var(--ease-playful);
   }
   100% {
     transform: rotate(360deg);
