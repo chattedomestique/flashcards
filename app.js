@@ -1,6 +1,7 @@
 const app = document.querySelector(".app");
-const menuScreen = document.querySelector(".menu-screen");
-const cardScreen = document.querySelector(".card-screen");
+const menuPanel = document.querySelector(".menu-panel");
+const deckPanel = document.querySelector(".deck-panel");
+const cardRotator = document.querySelector(".card-rotator");
 const menuItems = document.querySelectorAll(".menu-item");
 const flashcard = document.querySelector(".flashcard");
 const flashcardLabel = document.querySelector(".flashcard-label");
@@ -32,7 +33,6 @@ const sets = {
 
 let isTransitioning = false;
 
-
 const setActiveMenu = (selected) => {
   menuItems.forEach((item) => {
     item.classList.toggle("is-active", item === selected);
@@ -41,29 +41,32 @@ const setActiveMenu = (selected) => {
 
 const showMenu = () => {
   app.dataset.state = "menu";
-  cardScreen.setAttribute("aria-hidden", "true");
-  menuScreen.removeAttribute("aria-hidden");
+  menuPanel.setAttribute("aria-hidden", "false");
+  deckPanel.setAttribute("aria-hidden", "true");
+  cardRotator.classList.remove("is-spinning");
 };
 
-const showCard = (setKey) => {
+const updateCardContent = (setKey) => {
   const set = sets[setKey] || sets.shapes;
   deckLabel.textContent = `${set.title} deck`;
   flashcardLabel.textContent = set.cardFront;
   flashcardBack.textContent = set.cardBack;
   flashcardShape.className = `shape ${set.shapeClass}`;
   flashcard.classList.remove("is-flipped");
-
-  app.dataset.state = "card";
-  menuScreen.setAttribute("aria-hidden", "true");
-  cardScreen.removeAttribute("aria-hidden");
-  isTransitioning = false;
 };
 
 const startDeck = (setKey, target) => {
   if (isTransitioning) return;
   isTransitioning = true;
   setActiveMenu(target);
-  showCard(setKey);
+  updateCardContent(setKey);
+  app.dataset.state = "card";
+  menuPanel.setAttribute("aria-hidden", "true");
+  deckPanel.setAttribute("aria-hidden", "false");
+
+  cardRotator.classList.remove("is-spinning");
+  void cardRotator.offsetWidth;
+  cardRotator.classList.add("is-spinning");
 };
 
 menuItems.forEach((item) => {
@@ -97,5 +100,11 @@ flashcard.addEventListener("keydown", (event) => {
 
 backButton.addEventListener("click", () => {
   showMenu();
+  isTransitioning = false;
+});
+
+cardRotator.addEventListener("animationend", (event) => {
+  if (event.animationName !== "cardSpin") return;
+  cardRotator.classList.remove("is-spinning");
   isTransitioning = false;
 });

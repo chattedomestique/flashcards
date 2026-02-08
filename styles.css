@@ -9,6 +9,7 @@
   --border: 3px solid var(--ink);
   --radius: 18px;
   --ease-playful: cubic-bezier(0.16, 1.35, 0.32, 1);
+  --ease-fast: cubic-bezier(0.2, 0.95, 0.2, 1);
 }
 
 * {
@@ -59,34 +60,75 @@ body {
   position: relative;
   height: 100%;
   color: var(--ink);
+  --card-width: min(360px, 90vw);
+  --card-height: 360px;
+  --card-padding: 28px 24px 32px;
+}
+
+.app[data-state="card"] {
+  --card-width: min(420px, 92vw);
+  --card-height: 520px;
+  --card-padding: 30px 26px 32px;
 }
 
 .screen {
-  position: absolute;
-  inset: 0;
   display: grid;
   place-items: center;
+  height: 100%;
   padding: 28px 20px;
-  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-.screen[aria-hidden="true"] {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(10px);
+.card-stage {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
 }
 
-.launch,
-.card-panel {
-  width: min(420px, 92vw);
+.card-rotator {
+  transform-origin: center;
+  will-change: transform;
+}
+
+.card-rotator.is-spinning {
+  animation: cardSpin 1.2s var(--ease-playful) 1;
+}
+
+.card-shell {
+  width: var(--card-width);
+  height: var(--card-height);
+  padding: var(--card-padding);
   border: var(--border);
   border-radius: var(--radius);
   background: var(--paper);
   box-shadow: var(--shadow);
-  padding: 32px 26px 36px;
-  text-align: center;
   color: var(--ink);
-  animation: slideUp 0.6s ease both;
+  position: relative;
+  overflow: hidden;
+  transition: width 0.45s var(--ease-fast), height 0.45s var(--ease-fast),
+    padding 0.45s var(--ease-fast);
+}
+
+.panel {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  gap: 20px;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  pointer-events: none;
+  padding: 0 10px;
+}
+
+.app[data-state="menu"] .menu-panel,
+.app[data-state="card"] .deck-panel {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .title {
@@ -104,6 +146,7 @@ body {
   margin: 0;
   display: grid;
   gap: 16px;
+  width: 100%;
 }
 
 .menu-item {
@@ -148,11 +191,6 @@ body {
   outline-offset: 4px;
 }
 
-
-.card-panel {
-  display: grid;
-  gap: 20px;
-}
 
 .deck-label {
   margin: 0;
@@ -247,13 +285,25 @@ body {
   }
 }
 
-@media (max-width: 520px) {
-  .launch,
-  .card-panel {
-    padding: 28px 22px 32px;
+@keyframes cardSpin {
+  0% {
+    transform: rotate(0deg);
   }
+  100% {
+    transform: rotate(720deg);
+  }
+}
 
+@media (max-width: 520px) {
   .menu-item {
     font-size: 18px;
+  }
+
+  .app {
+    --card-height: 340px;
+  }
+
+  .app[data-state="card"] {
+    --card-height: 500px;
   }
 }
