@@ -1,10 +1,6 @@
 const app = document.querySelector(".app");
 const menuScreen = document.querySelector(".menu-screen");
 const cardScreen = document.querySelector(".card-screen");
-const loadingScreen = document.querySelector(".loading-screen");
-const loadingCard = document.querySelector(".loading-card");
-const loadingSet = document.querySelector(".loading-set");
-const loaderRotator = document.querySelector(".loader-rotator");
 const menuItems = document.querySelectorAll(".menu-item");
 const flashcard = document.querySelector(".flashcard");
 const flashcardLabel = document.querySelector(".flashcard-label");
@@ -35,16 +31,7 @@ const sets = {
 };
 
 let isTransitioning = false;
-let loadingTimer = null;
-const LOADER_DURATION = 4200;
 
-const playLoaderAnimation = () => {
-  if (!loaderRotator) return;
-
-  loaderRotator.classList.remove("is-animating");
-  void loaderRotator.offsetWidth;
-  loaderRotator.classList.add("is-animating");
-};
 
 const setActiveMenu = (selected) => {
   menuItems.forEach((item) => {
@@ -56,8 +43,6 @@ const showMenu = () => {
   app.dataset.state = "menu";
   cardScreen.setAttribute("aria-hidden", "true");
   menuScreen.removeAttribute("aria-hidden");
-  loadingScreen.setAttribute("aria-hidden", "true");
-  loadingCard.classList.remove("is-flipped");
 };
 
 const showCard = (setKey) => {
@@ -70,35 +55,15 @@ const showCard = (setKey) => {
 
   app.dataset.state = "card";
   menuScreen.setAttribute("aria-hidden", "true");
-  loadingScreen.setAttribute("aria-hidden", "true");
   cardScreen.removeAttribute("aria-hidden");
-  loadingCard.classList.remove("is-flipped");
   isTransitioning = false;
 };
 
-const startLoading = (setKey, target) => {
+const startDeck = (setKey, target) => {
   if (isTransitioning) return;
   isTransitioning = true;
   setActiveMenu(target);
-  app.dataset.state = "loading";
-  menuScreen.setAttribute("aria-hidden", "true");
-  cardScreen.setAttribute("aria-hidden", "true");
-  loadingScreen.removeAttribute("aria-hidden");
-  loadingSet.textContent = setKey;
-  loadingCard.classList.remove("is-flipped");
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      loadingCard.classList.add("is-flipped");
-    });
-  });
-
-  playLoaderAnimation();
-
-  clearTimeout(loadingTimer);
-  loadingTimer = window.setTimeout(() => {
-    showCard(setKey);
-  }, LOADER_DURATION);
+  showCard(setKey);
 };
 
 menuItems.forEach((item) => {
@@ -115,7 +80,7 @@ menuItems.forEach((item) => {
   });
 
   item.addEventListener("click", () => {
-    startLoading(item.dataset.set, item);
+    startDeck(item.dataset.set, item);
   });
 });
 
