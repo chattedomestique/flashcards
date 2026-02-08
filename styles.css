@@ -234,19 +234,34 @@ body {
   display: grid;
   place-items: center;
   transform-origin: 50% 50%;
+  position: relative;
 }
 
 .loader-rotator.is-animating {
   animation: loaderSpin 1.6s var(--ease-playful) infinite;
 }
 
-.loader-block {
-  width: 78px;
-  height: 78px;
-  background: var(--accent-2);
-  border: var(--border);
-  box-shadow: var(--shadow);
-  border-radius: 14px;
+.loader-svg {
+  width: 84px;
+  height: 84px;
+  fill: var(--accent-2);
+  stroke: var(--ink);
+  stroke-width: 4px;
+  paint-order: stroke fill;
+  filter: drop-shadow(8px 8px 0 #000000);
+}
+
+.loader-square,
+.loader-triangle {
+  opacity: 0;
+}
+
+.loader-rotator.is-animating .loader-square {
+  animation: squareSwap 1.6s steps(1, end) infinite;
+}
+
+.loader-rotator.is-animating .loader-triangle {
+  animation: triangleSwap 1.6s steps(1, end) infinite;
 }
 
 @keyframes loaderSpin {
@@ -260,6 +275,28 @@ body {
   }
   100% {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes squareSwap {
+  0%,
+  49.999% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes triangleSwap {
+  0%,
+  49.999% {
+    opacity: 0;
+  }
+  50%,
+  100% {
+    opacity: 1;
   }
 }
 
