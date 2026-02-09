@@ -93,7 +93,7 @@ body {
 }
 
 .card-rotator.is-spinning {
-  animation: cardFlip 1.8s var(--ease-playful) 1;
+  animation: cardFlip 2.8s var(--ease-playful) 1;
 }
 
 .card-shell {
@@ -300,7 +300,7 @@ body {
     transform: rotateY(0deg);
   }
   100% {
-    transform: rotateY(720deg);
+    transform: rotateY(540deg);
   }
 }
 
