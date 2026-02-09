@@ -8,7 +8,7 @@
   --shadow: 8px 8px 0 #000000;
   --border: 3px solid var(--ink);
   --radius: 18px;
-  --ease-playful: cubic-bezier(0.16, 1, 0.24, 1);
+  --ease-playful: cubic-bezier(0.4, 0, 0.8, 1);
   --ease-fast: cubic-bezier(0.2, 0.95, 0.2, 1);
 }
 
@@ -107,6 +107,7 @@ body {
   color: var(--ink);
   position: relative;
   overflow: hidden;
+  transform-style: preserve-3d;
   transition: width 0.45s var(--ease-fast), height 0.45s var(--ease-fast),
     padding 0.45s var(--ease-fast);
 }
@@ -120,16 +121,23 @@ body {
   justify-items: center;
   text-align: center;
   opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.35s ease, transform 0.35s ease;
+  transition: opacity 0.35s ease;
   pointer-events: none;
   padding: 0 10px;
+  backface-visibility: hidden;
+}
+
+.menu-panel {
+  transform: rotateY(0deg);
+}
+
+.deck-panel {
+  transform: rotateY(180deg);
 }
 
 .app[data-state="menu"] .menu-panel,
 .app[data-state="card"] .deck-panel {
   opacity: 1;
-  transform: translateY(0);
   pointer-events: auto;
 }
 
