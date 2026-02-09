@@ -8,7 +8,7 @@
   --shadow: 8px 8px 0 #000000;
   --border: 3px solid var(--ink);
   --radius: 18px;
-  --ease-playful: cubic-bezier(0.2, 0.9, 0.2, 1);
+  --ease-playful: cubic-bezier(0.16, 1, 0.24, 1);
   --ease-fast: cubic-bezier(0.2, 0.95, 0.2, 1);
 }
 
@@ -93,7 +93,7 @@ body {
 }
 
 .card-rotator.is-spinning {
-  animation: cardFlip 4.2s var(--ease-playful) 1;
+  animation: cardFlip 2.52s var(--ease-playful) 1;
 }
 
 .card-shell {
