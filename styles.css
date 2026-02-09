@@ -93,7 +93,7 @@ body {
 }
 
 .card-rotator.is-spinning {
-  animation: cardFlip 2.8s var(--ease-playful) 1;
+  animation: cardFlip 4.2s var(--ease-playful) 1;
 }
 
 .card-shell {
