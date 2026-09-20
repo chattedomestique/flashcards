@@ -2,60 +2,296 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Flashcards</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Flashcards — learn your shapes</title>
+    <meta
+      name="description"
+      content="A simple, multi-modal flashcard app for learning shapes. See it, hear it, name it."
+    />
+    <meta
+      name="theme-color"
+      content="#fff2dc"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#1d1a13"
+      media="(prefers-color-scheme: dark)"
+    />
+    <meta name="color-scheme" content="light dark" />
+
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23ffd400'/%3E%3Cpath d='M50 18 L82 76 H18 Z' fill='none' stroke='%2314120e' stroke-width='9' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Space+Mono:wght@700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="noise"></div>
+    <a class="skip-link" href="#main">Skip to content</a>
 
-    <div class="app" data-state="menu">
-      <main class="screen" aria-label="Flashcards">
-        <div class="card-stage">
-          <div class="card-rotator">
-            <section class="card-shell">
-              <div class="panel menu-panel" aria-hidden="false">
-                <h1 class="title">flashcards</h1>
-                <ul class="menu" role="list">
-                  <li>
-                    <button class="menu-item is-active" type="button" data-set="shapes">
-                      shapes
-                    </button>
-                  </li>
-                  <li>
-                    <button class="menu-item" type="button" data-set="numbers">numbers</button>
-                  </li>
-                  <li>
-                    <button class="menu-item" type="button" data-set="letters">letters</button>
-                  </li>
-                </ul>
-              </div>
+    <div class="app">
+      <header class="topbar">
+        <button
+          class="press icon-btn"
+          type="button"
+          id="back-btn"
+          data-action="back"
+          aria-label="Back"
+          hidden
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M19 12H5M11 18l-6-6 6-6" />
+          </svg>
+        </button>
 
-              <div class="panel deck-panel" aria-hidden="true">
-                <p class="deck-label">shapes deck</p>
-                <div class="flashcard" role="button" tabindex="0" aria-label="Flip flashcard">
-                  <div class="flashcard-face flashcard-front">
-                    <span class="flashcard-label">Square</span>
-                    <div class="shape square"></div>
-                  </div>
-                  <div class="flashcard-face flashcard-back">
-                    <p>Four equal sides, four right angles.</p>
-                  </div>
-                </div>
-                <button class="ghost-btn back-btn" type="button">Back</button>
-              </div>
-            </section>
+        <p class="topbar-title" id="screen-title">Flashcards</p>
+
+        <button
+          class="press icon-btn"
+          type="button"
+          id="sound-btn"
+          data-action="toggle-sound"
+          aria-pressed="true"
+        >
+          <span class="sr-only" id="sound-label"
+            >Sound and vibration on. Turn off.</span
+          >
+          <svg
+            class="icon-sound-on"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M11 5 6 9H3v6h3l5 4V5Z" />
+            <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+            <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+          </svg>
+          <svg
+            class="icon-sound-off"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+            hidden
+          >
+            <path d="M11 5 6 9H3v6h3l5 4V5Z" />
+            <path d="m16 9 5 6M21 9l-5 6" />
+          </svg>
+        </button>
+      </header>
+
+      <main class="main" id="main">
+        <!-- ---------- home ---------- -->
+        <section
+          class="screen home"
+          id="screen-home"
+          aria-labelledby="home-heading"
+        >
+          <div>
+            <h1 class="wordmark" id="home-heading">flash<span>cards</span></h1>
+            <p class="tagline">See it. Hear it. Name it.</p>
           </div>
-        </div>
+
+          <div class="deck-tile" id="deck-panel"></div>
+
+          <div class="controls">
+            <button
+              class="press btn btn-lg btn-primary"
+              type="button"
+              data-action="start-learn"
+            >
+              Start learning
+            </button>
+            <button
+              class="press btn btn-lg"
+              type="button"
+              data-action="start-quiz"
+            >
+              Quiz me
+            </button>
+          </div>
+        </section>
+
+        <!-- ---------- study ---------- -->
+        <section
+          class="screen"
+          id="screen-study"
+          aria-labelledby="study-heading"
+          hidden
+        >
+          <h2 class="sr-only" id="study-heading">Study the shapes deck</h2>
+
+          <div class="study-head">
+            <div class="meter">
+              <div class="meter-fill" id="study-meter"></div>
+            </div>
+            <p class="meter-label">
+              <span id="study-count"></span>
+              <span id="study-remaining"></span>
+            </p>
+          </div>
+
+          <div class="deck-stage">
+            <article
+              class="card"
+              id="card"
+              data-face="front"
+              tabindex="0"
+              role="button"
+              aria-describedby="card-help"
+            >
+              <span
+                class="swipe-badge"
+                data-side="left"
+                id="badge-again"
+                aria-hidden="true"
+                >Again</span
+              >
+              <span
+                class="swipe-badge"
+                data-side="right"
+                id="badge-got"
+                aria-hidden="true"
+                >Got it</span
+              >
+
+              <div class="card-inner">
+                <div class="card-face card-front">
+                  <p class="card-kicker">What shape is this?</p>
+                  <div class="shape-well" id="card-shape"></div>
+                  <span class="card-hint">Tap to reveal</span>
+                </div>
+
+                <div class="card-face card-back">
+                  <h3 class="shape-name" id="card-name"></h3>
+                  <ul class="fact-chips" id="card-facts"></ul>
+                  <p class="shape-def" id="card-def"></p>
+                  <p class="shape-example" id="card-example"></p>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <p class="sr-only" id="card-help">
+            Press Enter or Space to reveal the answer. Press 1 to mark it for
+            another try, or 2 if you got it. Use the left and right arrow keys
+            to move between cards.
+          </p>
+
+          <div class="controls">
+            <div class="btn-row">
+              <button
+                class="press btn btn-bad"
+                type="button"
+                data-action="rate-again"
+              >
+                Again
+              </button>
+              <button
+                class="press btn btn-good"
+                type="button"
+                data-action="rate-got"
+              >
+                Got it
+              </button>
+            </div>
+            <p class="keyhint">
+              <span><kbd>Space</kbd> flip</span>
+              <span><kbd>1</kbd> again</span>
+              <span><kbd>2</kbd> got it</span>
+              <span><kbd>←</kbd><kbd>→</kbd> move</span>
+            </p>
+          </div>
+        </section>
+
+        <!-- ---------- quiz ---------- -->
+        <section
+          class="screen quiz"
+          id="screen-quiz"
+          aria-labelledby="quiz-heading"
+          hidden
+        >
+          <h2 class="sr-only" id="quiz-heading">Quiz on the shapes deck</h2>
+
+          <div class="study-head">
+            <div class="meter">
+              <div class="meter-fill" id="quiz-meter"></div>
+            </div>
+            <p class="meter-label">
+              <span id="quiz-count"></span>
+              <span id="quiz-score"></span>
+            </p>
+          </div>
+
+          <div class="quiz-prompt" id="quiz-prompt"></div>
+
+          <div
+            class="quiz-options"
+            id="quiz-options"
+            role="group"
+            aria-labelledby="quiz-question"
+          ></div>
+
+          <p class="quiz-feedback" id="quiz-feedback"></p>
+        </section>
+
+        <!-- ---------- summary ---------- -->
+        <section
+          class="screen summary"
+          id="screen-summary"
+          aria-labelledby="summary-heading"
+          hidden
+        >
+          <div class="score-ring">
+            <p class="score-value" id="score-value">0%</p>
+            <p class="score-label">correct</p>
+          </div>
+
+          <div>
+            <h2 class="summary-title" id="summary-heading"></h2>
+            <p class="tagline" id="summary-detail"></p>
+          </div>
+
+          <ul class="missed" id="missed-list"></ul>
+
+          <div class="controls" id="summary-actions"></div>
+        </section>
       </main>
     </div>
 
-    <script src="app.js"></script>
+    <div class="toast" id="toast" hidden>
+      <span id="toast-text"></span>
+      <button type="button" id="toast-undo">Undo</button>
+    </div>
+
+    <p class="sr-only" role="status" aria-live="polite" id="live"></p>
+
+    <script src="decks.js" defer></script>
+    <script src="app.js" defer></script>
   </body>
 </html>
