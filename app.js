@@ -23,6 +23,7 @@
   var STORE_KEY = "flashcards.v1";
   var SWIPE_DISTANCE = 0.28; // fraction of card width
   var SWIPE_VELOCITY = 0.45; // px per ms
+  var SWIPE_MAX_PX = 120; // absolute cap on the commit distance
   var DRAG_SLOP = 8; // px before a press becomes a drag
 
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -48,19 +49,42 @@
     while (node.firstChild) node.removeChild(node.firstChild);
   }
 
-  /** Draw a card's shape. viewBox is padded so the stroke never clips. */
-  function shapeSVG(card, strokeWidth) {
+  /** Draw a card's shape. viewBox is padded so the stroke never clips.
+      `tone` overrides the card's own colour — the quiz passes a tone derived
+      from the option's POSITION, so colour carries no clue about which shape it
+      is. Without that a learner can answer the whole quiz on colour alone and
+      never once look at the geometry. */
+  function shapeSVG(card, strokeWidth, tone) {
     var svg = document.createElementNS(SVG_NS, "svg");
-    svg.setAttribute("viewBox", "-5 -5 110 110");
+    svg.setAttribute("viewBox", "-8 -8 116 116");
     svg.setAttribute("aria-hidden", "true");
     svg.setAttribute("focusable", "false");
     var path = document.createElementNS(SVG_NS, "path");
     path.setAttribute("d", card.art.path);
     path.setAttribute("stroke-linejoin", "round");
-    path.setAttribute("stroke-width", String(strokeWidth || 6));
+
+    // Optical correction, measured per shape (see decks.js). The stroke is
+    // divided back out so every outline lands at the same weight whatever the
+    // shape was scaled by.
+    var s = card.art.scale || 1;
+    var dx = card.art.dx || 0;
+    var dy = card.art.dy || 0;
+    if (s !== 1 || dx || dy) {
+      path.setAttribute(
+        "transform",
+        "translate(" +
+          dx +
+          " " +
+          dy +
+          ") translate(50 50) scale(" +
+          s +
+          ") translate(-50 -50)",
+      );
+    }
+    path.setAttribute("stroke-width", String((strokeWidth || 6) / s));
     // Set through style, not presentation attributes: var() is reliable there
     // in every engine.
-    path.style.fill = "var(--t" + card.tone + ")";
+    path.style.fill = "var(--t" + (tone || card.tone) + ")";
     path.style.stroke = "var(--ink)";
     svg.appendChild(path);
     return svg;
@@ -79,8 +103,26 @@
         var data = JSON.parse(raw);
         if (data && typeof data === "object") {
           if (typeof data.sound === "boolean") this.sound = data.sound;
-          if (data.progress && typeof data.progress === "object")
-            this.progress = data.progress;
+          // Whatever sits under this key came from outside the program.
+          if (data.progress && typeof data.progress === "object") {
+            var clean = {};
+            var n = function (x) {
+              return typeof x === "number" && isFinite(x) && x >= 0
+                ? Math.floor(x)
+                : 0;
+            };
+            Object.keys(data.progress).forEach(function (id) {
+              var v = data.progress[id];
+              if (v && typeof v === "object") {
+                clean[id] = {
+                  seen: n(v.seen),
+                  correct: n(v.correct),
+                  streak: n(v.streak),
+                };
+              }
+            });
+            this.progress = clean;
+          }
         }
       } catch (err) {
         /* private mode, disabled storage, corrupt JSON — defaults are fine */
@@ -138,6 +180,32 @@
 
   var speech = {
     supported: typeof window.speechSynthesis !== "undefined",
+    voice: null,
+
+    /** getVoices() is commonly empty on a cold page and fills asynchronously,
+        so resolve now and again when the list arrives. Prefer a locally
+        installed English voice: remote ones stall or fail with no network. */
+    init: function () {
+      if (!this.supported) return;
+      var self = this;
+      var pick = function () {
+        try {
+          var voices = window.speechSynthesis.getVoices() || [];
+          var english = voices.filter(function (v) {
+            return /^en/i.test(v.lang || "");
+          });
+          var local = english.filter(function (v) {
+            return v.localService;
+          });
+          self.voice = local[0] || english[0] || null;
+        } catch (err) {}
+      };
+      pick();
+      try {
+        window.speechSynthesis.addEventListener("voiceschanged", pick);
+      } catch (err) {}
+    },
+
     say: function (text) {
       if (!store.sound || !this.supported || !text) return;
       try {
@@ -146,6 +214,7 @@
         u.rate = 0.92;
         u.pitch = 1.05;
         u.lang = document.documentElement.lang || "en";
+        if (this.voice) u.voice = this.voice;
         window.speechSynthesis.speak(u);
       } catch (err) {
         /* some browsers throw when no voices are installed */
@@ -159,6 +228,20 @@
       }
     },
   };
+
+  /** iOS — and Chrome in some states — silently no-op the first speak() that
+      was not made during a user gesture, which kills the audio channel for the
+      whole session. Spend that first utterance on nothing, once. */
+  var speechPrimed = false;
+  function primeSpeech() {
+    if (speechPrimed || !speech.supported) return;
+    speechPrimed = true;
+    try {
+      var u = new window.SpeechSynthesisUtterance(" ");
+      u.volume = 0;
+      window.speechSynthesis.speak(u);
+    } catch (err) {}
+  }
 
   function buzz(pattern) {
     if (!store.sound) return;
@@ -208,7 +291,7 @@
 
   var SCREENS = {
     home: { node: "screen-home", title: "", focus: null },
-    study: { node: "screen-study", title: "Learning", focus: "card" },
+    study: { node: "screen-study", title: "Learning", focus: "card-action" },
     quiz: { node: "screen-quiz", title: "Quiz", focus: null },
     summary: {
       node: "screen-summary",
@@ -218,6 +301,7 @@
   };
 
   var current = "home";
+  var NATIVELY_FOCUSABLE = /^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/;
 
   function navigate(name, push) {
     if (!SCREENS[name]) name = "home";
@@ -245,8 +329,15 @@
       ? $(focusId)
       : $(SCREENS[name].node).querySelector("h1, h2, button");
     if (target) {
-      if (!target.hasAttribute("tabindex"))
+      // Only non-interactive targets (a heading, a panel) need a tabindex to
+      // receive focus. Stamping one on a real button would take it OUT of the
+      // tab order, which is the opposite of what this is for.
+      if (
+        !NATIVELY_FOCUSABLE.test(target.tagName) &&
+        !target.hasAttribute("tabindex")
+      ) {
         target.setAttribute("tabindex", "-1");
+      }
       target.focus({ preventScroll: true });
     }
   }
@@ -254,8 +345,39 @@
   /* ------------------------------------------------------------------ home  */
 
   var deck = null;
+  var allDecks = [];
+
+  /** Weakest first, shuffled within each tier. Progress that never changes what
+      you are shown is decoration; this is what makes it mean something. */
+  function sessionOrder(cards) {
+    var tiers = [[], [], []];
+    shuffle(cards).forEach(function (card) {
+      var streak = store.stats(card.id).streak;
+      tiers[streak >= 2 ? 2 : streak === 1 ? 1 : 0].push(card);
+    });
+    return tiers[0].concat(tiers[1], tiers[2]);
+  }
 
   function renderHome() {
+    var switcher = $("deck-switch");
+    clear(switcher);
+    switcher.hidden = allDecks.length < 2;
+    if (!switcher.hidden) {
+      allDecks.forEach(function (item) {
+        var tab = document.createElement("button");
+        tab.type = "button";
+        tab.className = "press";
+        tab.textContent = item.name;
+        tab.setAttribute("aria-pressed", item === deck ? "true" : "false");
+        tab.addEventListener("click", function () {
+          deck = item;
+          renderHome();
+          announce(item.name + " deck selected.");
+        });
+        switcher.appendChild(tab);
+      });
+    }
+
     var panel = $("deck-panel");
     clear(panel);
 
@@ -330,8 +452,10 @@
     advancing: false,
 
     start: function (cards) {
-      this.queue = shuffle(cards);
+      this.queue = sessionOrder(cards);
       this.index = 0;
+      // Sparse, keyed by queue position: arrow-keying back to a card and
+      // rating it again must replace that answer, not append a second one.
       this.results = [];
       this.lastAction = null;
       this.advancing = false;
@@ -376,21 +500,16 @@
         facts.appendChild(li);
       });
 
-      node.setAttribute(
-        "aria-label",
-        "Card " +
-          (this.index + 1) +
-          " of " +
-          this.queue.length +
-          ", hidden. Activate to reveal the answer.",
-      );
+      this.syncFace();
 
       var pct = (this.index / this.queue.length) * 100;
       $("study-meter").style.width = pct + "%";
       $("study-count").textContent =
         "Card " + (this.index + 1) + " of " + this.queue.length;
-      $("study-remaining").textContent =
-        this.queue.length - this.index + " to go";
+      var known = this.results.filter(function (r) {
+        return r && r.gotIt;
+      }).length;
+      $("study-remaining").textContent = known + " known";
 
       if (animate && !reduceMotion.matches) {
         node.classList.remove("is-entering");
@@ -408,51 +527,97 @@
       var toBack = node.dataset.face === "front";
       node.dataset.face = toBack ? "back" : "front";
       buzz(8);
+      this.syncFace();
 
       if (toBack) {
-        node.setAttribute(
-          "aria-label",
-          card.name + ". Activate to hide the answer.",
-        );
         speech.say(card.name);
         announce(
           card.name + ". " + card.definition + " Like " + card.example + ".",
         );
-      } else {
-        node.setAttribute(
-          "aria-label",
-          "Card " +
-            (this.index + 1) +
-            " of " +
-            this.queue.length +
-            ", hidden. Activate to reveal the answer.",
-        );
       }
     },
 
-    /** Record an answer and move on. */
+    /** Keep the action button and the accessibility tree in step with the face.
+        Only the side facing the viewer may be exposed: with both faces in the
+        tree a screen reader reads the answer before the card is ever turned. */
+    syncFace: function () {
+      var node = $("card");
+      var toBack = node.dataset.face === "back";
+
+      [
+        [node.querySelector(".card-front"), toBack],
+        [node.querySelector(".card-back"), !toBack],
+      ].forEach(function (pair) {
+        pair[0].inert = pair[1];
+        // aria-hidden as the fallback where `inert` is unsupported. Neither
+        // face holds a focusable control, so this cannot strand focus.
+        if (pair[1]) pair[0].setAttribute("aria-hidden", "true");
+        else pair[0].removeAttribute("aria-hidden");
+      });
+
+      var action = $("card-action");
+      action.setAttribute("aria-expanded", toBack ? "true" : "false");
+      action.textContent = toBack ? "Hear it again" : "Reveal answer";
+      action.classList.toggle("btn-primary", !toBack);
+    },
+
     rate: function (gotIt) {
       var card = this.card();
       // Without this, mashing the button rates the same card repeatedly and
       // skips the ones behind it, because the index only moves on the timer.
       if (!card || this.advancing) return;
 
+      var self = this;
+      var node = $("card");
+
+      // A rating made without ever seeing the answer teaches nothing, so
+      // answering face-down reveals first and commits a beat later. Flip it
+      // yourself and the rating is instant — no penalty for already knowing.
+      if (node.dataset.face === "front") {
+        this.advancing = true;
+        this.flip();
+        window.setTimeout(function () {
+          self.advancing = false;
+          self.commit(gotIt);
+        }, 700);
+        return;
+      }
+
+      this.commit(gotIt);
+    },
+
+    commit: function (gotIt) {
+      var card = this.card();
+      if (!card || this.advancing) return;
+
+      // Roll back any earlier answer for this position before recording again.
+      var earlier = this.results[this.index];
+      if (earlier) store.restore(card.id, earlier.prev);
+
       var prev = store.record(card.id, gotIt);
-      this.results.push({ card: card, gotIt: gotIt });
-      this.lastAction = { index: this.index, card: card, prev: prev };
+      this.results[this.index] = { card: card, gotIt: gotIt, prev: prev };
+      this.lastAction = {
+        index: this.index,
+        card: card,
+        prev: prev,
+        earlier: earlier || null,
+      };
       buzz(gotIt ? 12 : [24, 40, 24]);
 
       var self = this;
-      toast.show(gotIt ? "Marked “Got it”" : "Marked “Again”", function () {
-        self.undo();
-      });
+      toast.show(
+        gotIt ? "Marked \u201cGot it\u201d" : "Marked \u201cAgain\u201d",
+        function () {
+          self.undo();
+        },
+      );
 
       var node = $("card");
       var done = function () {
         try {
           self.index += 1;
           if (self.index >= self.queue.length) {
-            summary.fromStudy(self.results);
+            summary.fromStudy(self.results, self.queue);
           } else {
             self.render(true);
           }
@@ -477,14 +642,15 @@
         "deg)";
       // A timeout, not transitionend: if the transition is dropped for any
       // reason the deck still advances instead of freezing forever.
-      window.setTimeout(done, 300);
+      window.setTimeout(done, 260);
     },
 
     undo: function () {
       var action = this.lastAction;
       if (!action) return;
       store.restore(action.card.id, action.prev);
-      this.results.pop();
+      if (action.earlier) this.results[action.index] = action.earlier;
+      else delete this.results[action.index];
       this.index = action.index;
       this.lastAction = null;
       this.advancing = false;
@@ -492,6 +658,22 @@
       navigate("study", false);
       this.render(true);
       announce("Undone. Back to " + action.card.name + ".");
+    },
+
+    /** Say the answer again, revealing first if it is still face down. An
+        audio channel that plays once and never again is useless to the learner
+        who depends on it; this re-announces for screen readers too. */
+    replay: function () {
+      var card = this.card();
+      if (!card || this.advancing) return;
+      if ($("card").dataset.face === "front") {
+        this.flip();
+        return;
+      }
+      speech.say(card.name + ". " + card.definition);
+      announce(
+        card.name + ". " + card.definition + " Like " + card.example + ".",
+      );
     },
 
     move: function (delta) {
@@ -532,7 +714,11 @@
     drag.startTime = event.timeStamp;
     drag.dx = 0;
     drag.active = false;
-    $("card").classList.remove("is-settling");
+    // A stale suppressClick from a previous gesture would silently eat this tap.
+    drag.suppressClick = false;
+    var node = $("card");
+    node.classList.remove("is-settling");
+    node.classList.add("is-pressed");
   }
 
   function onPointerMove(event) {
@@ -546,6 +732,7 @@
       if (Math.abs(dx) < DRAG_SLOP || Math.abs(dx) <= Math.abs(dy)) return;
       drag.active = true;
       drag.suppressClick = true;
+      $("card").classList.remove("is-pressed");
       try {
         $("card").setPointerCapture(event.pointerId);
       } catch (err) {}
@@ -558,6 +745,7 @@
   }
 
   function endDrag(commit, event) {
+    $("card").classList.remove("is-pressed");
     if (drag.pointerId === null) return;
     var node = $("card");
     try {
@@ -575,12 +763,24 @@
     if (!wasActive) return;
 
     var width = node.offsetWidth || 1;
-    var far = Math.abs(dx) > width * SWIPE_DISTANCE;
+    // Capped: on a wide landscape card 28% is a 140px haul across a screen
+    // only 300px tall. Velocity carries most real commits anyway.
+    var far = Math.abs(dx) > Math.min(width * SWIPE_DISTANCE, SWIPE_MAX_PX);
     var fast =
       Math.abs(dx) / elapsed > SWIPE_VELOCITY && Math.abs(dx) > DRAG_SLOP * 3;
 
     if (commit && (far || fast)) {
       setBadges(0);
+      // If the answer was never revealed, bring the card home first: rate()
+      // is about to flip it, and a card that reveals while still displaced
+      // halfway off screen just looks broken.
+      if (node.dataset.face === "front") {
+        node.classList.add("is-settling");
+        node.style.transform = "";
+        window.setTimeout(function () {
+          node.classList.remove("is-settling");
+        }, 340);
+      }
       study.rate(dx > 0);
       return;
     }
@@ -613,6 +813,10 @@
         ).slice(0, 3);
         return {
           card: card,
+          // Every option in a question shares one tone, and that tone comes
+          // from the question's position. Colour therefore says nothing about
+          // which shape is which — the learner has to read the geometry.
+          tone: (i % 6) + 1,
           // Alternate the direction so both recall paths get exercised:
           // see the shape and name it, then hear the name and find the shape.
           mode: i % 2 === 0 ? "name" : "shape",
@@ -641,7 +845,8 @@
       if (q.mode === "name") {
         heading.textContent = "Which shape is this?";
         promptBox.appendChild(heading);
-        promptBox.appendChild(shapeSVG(q.card));
+        // A fixed tone: the prompt's colour must not narrow down the answer.
+        promptBox.appendChild(shapeSVG(q.card, 6, q.tone));
       } else {
         heading.textContent = "Find this shape";
         var word = document.createElement("p");
@@ -665,7 +870,9 @@
         if (q.mode === "name") {
           btn.textContent = option.name;
         } else {
-          btn.appendChild(shapeSVG(option, 7));
+          // Tone follows the option's position, never the shape's identity,
+          // so the four colours say nothing about which one is correct.
+          btn.appendChild(shapeSVG(option, 7, q.tone));
           btn.setAttribute("aria-label", option.name);
         }
         btn.addEventListener("click", function () {
@@ -675,6 +882,7 @@
       });
 
       $("quiz-feedback").textContent = "";
+      $("quiz-next").hidden = true;
       $("quiz-meter").style.width =
         (this.index / this.questions.length) * 100 + "%";
       $("quiz-count").textContent =
@@ -683,6 +891,11 @@
         return r.gotIt;
       }).length;
       $("quiz-score").textContent = right + " correct";
+
+      // Focus the question, not an option: landing on a button invites an
+      // accidental Enter, and leaving focus on the body strands keyboard users.
+      promptBox.setAttribute("tabindex", "-1");
+      promptBox.focus({ preventScroll: true });
 
       announce(
         heading.textContent +
@@ -707,7 +920,9 @@
 
       var buttons = $("quiz-options").querySelectorAll("button");
       Array.prototype.forEach.call(buttons, function (btn) {
-        btn.disabled = true;
+        // Not `disabled`: that drops the reveal out of screen-reader review
+        // exactly when it matters most. aria-disabled locks it and keeps it.
+        btn.setAttribute("aria-disabled", "true");
         if (btn.dataset.id === q.card.id) btn.dataset.result = "correct";
       });
       if (!right) button.dataset.result = "wrong";
@@ -722,19 +937,37 @@
           : "Not quite. The answer is " + q.card.name + ".",
       );
 
+      // Give the answer somewhere to go that is not a timer: keyboard users
+      // and anyone still reading can move on themselves.
+      var next = $("quiz-next");
+      next.hidden = false;
+      next.textContent =
+        this.index + 1 >= this.questions.length ? "See results" : "Next";
+      next.focus({ preventScroll: true });
+
       var self = this;
       window.clearTimeout(this.timer);
       this.timer = window.setTimeout(
         function () {
-          self.index += 1;
-          if (self.index >= self.questions.length) {
-            summary.fromQuiz(self.results);
-          } else {
-            self.render();
-          }
+          self.next();
         },
-        right ? 850 : 1600,
+        right ? 1100 : 2400,
       );
+    },
+
+    next: function () {
+      window.clearTimeout(this.timer);
+      this.index += 1;
+      if (this.index >= this.questions.length) {
+        summary.fromQuiz(
+          this.results,
+          this.questions.map(function (q) {
+            return q.card;
+          }),
+        );
+      } else {
+        this.render();
+      }
     },
   };
 
@@ -743,32 +976,39 @@
   var summary = {
     missed: [],
 
-    fromStudy: function (results) {
-      this.show(results, "study");
+    fromStudy: function (results, cards) {
+      this.show(results, "study", cards);
     },
 
-    fromQuiz: function (results) {
-      this.show(results, "quiz");
+    fromQuiz: function (results, cards) {
+      this.show(results, "quiz", cards);
     },
 
-    show: function (results, origin) {
-      var total = results.length || 1;
-      var right = results.filter(function (r) {
+    show: function (results, origin, cards) {
+      // Scored over the SESSION, not over the cards you happened to answer —
+      // otherwise arrow-keying past everything and rating one scores 100%.
+      var session = cards || [];
+      var answered = results.filter(Boolean);
+      var size = session.length || answered.length || 1;
+      var right = answered.filter(function (r) {
         return r.gotIt;
       }).length;
-      var pct = Math.round((right / total) * 100);
+      var pct = Math.round((right / size) * 100);
 
-      // De-duplicate: a shape you missed twice is still one shape to practise.
-      var seen = {};
-      this.missed = results
-        .filter(function (r) {
-          if (r.gotIt || seen[r.card.id]) return false;
-          seen[r.card.id] = true;
-          return true;
-        })
-        .map(function (r) {
-          return r.card;
-        });
+      // Anything not positively known is worth practising — including cards
+      // that were skipped past, which otherwise count against the score but
+      // are never offered back. De-duplicated: missing a shape twice is still
+      // one shape to practise.
+      var known = {};
+      answered.forEach(function (r) {
+        if (r.gotIt) known[r.card.id] = true;
+      });
+      var listed = {};
+      this.missed = session.filter(function (card) {
+        if (known[card.id] || listed[card.id]) return false;
+        listed[card.id] = true;
+        return true;
+      });
 
       var ring = document.querySelector(".score-ring");
       ring.style.setProperty("--score", String(pct));
@@ -776,13 +1016,39 @@
         "--score-tone",
         pct >= 80 ? "var(--t4)" : pct >= 50 ? "var(--t1)" : "var(--t6)",
       );
+      // A percentage computed over self-reports is a number nobody earned.
+      // The gauge belongs to the quiz; Learn gets plain counts.
+      var isQuiz = origin === "quiz";
+      $("score-ring").hidden = !isQuiz;
+      $("tally").hidden = isQuiz;
+      if (!isQuiz) {
+        var tally = $("tally");
+        clear(tally);
+        [
+          [right, "known"],
+          [size - right, "to practise"],
+        ].forEach(function (pair) {
+          var li = document.createElement("li");
+          var n = document.createElement("b");
+          n.textContent = String(pair[0]);
+          li.appendChild(n);
+          li.appendChild(document.createTextNode(pair[1]));
+          tally.appendChild(li);
+        });
+      }
       $("score-value").textContent = pct + "%";
       $("summary-heading").textContent =
-        pct === 100 ? "Perfect run!" : pct >= 70 ? "Nice work." : "Good start.";
+        right === size
+          ? origin === "quiz"
+            ? "Perfect run!"
+            : "You knew them all."
+          : pct >= 70
+            ? "Nice work."
+            : "Good start.";
       $("summary-detail").textContent =
         right +
         " of " +
-        results.length +
+        size +
         (origin === "quiz" ? " answered correctly" : " marked as known");
 
       var list = $("missed-list");
@@ -881,10 +1147,26 @@
       quiz.start(deck.cards);
     },
     reset: function () {
+      var snapshot = JSON.parse(JSON.stringify(store.progress));
       store.reset();
       renderHome();
       announce("Progress reset.");
-      toast.show("Progress reset", null);
+      // Destroying every card's history on one tap needs a way back.
+      toast.show("Progress reset", function () {
+        store.progress = snapshot;
+        store.save();
+        renderHome();
+        toast.hide();
+        announce("Progress restored.");
+      });
+    },
+
+    "card-action": function () {
+      if (current === "study") study.replay();
+    },
+
+    "quiz-next": function () {
+      if (current === "quiz") quiz.next();
     },
     "rate-again": function () {
       if (current === "study") study.rate(false);
@@ -902,17 +1184,23 @@
   }
 
   /* Give touch devices a press state without waiting for :active to resolve. */
+  var RELEASE_EVENTS = ["pointerup", "pointercancel", "pointerleave"];
+
   function bindPressFeedback() {
     document.addEventListener("pointerdown", function (event) {
       var node = event.target.closest && event.target.closest(".press");
-      if (node) node.classList.add("is-pressed");
-    });
-    ["pointerup", "pointercancel", "pointerleave"].forEach(function (type) {
-      document.addEventListener(type, function () {
-        var pressed = document.querySelectorAll(".is-pressed");
-        Array.prototype.forEach.call(pressed, function (node) {
-          node.classList.remove("is-pressed");
+      if (!node) return;
+      node.classList.add("is-pressed");
+      // Bound to the pressed node itself. pointerleave on document never fires
+      // when the pointer slides off a button, which strands the pressed look.
+      var release = function () {
+        node.classList.remove("is-pressed");
+        RELEASE_EVENTS.forEach(function (type) {
+          node.removeEventListener(type, release);
         });
+      };
+      RELEASE_EVENTS.forEach(function (type) {
+        node.addEventListener(type, release);
       });
     });
   }
@@ -926,6 +1214,11 @@
     )
       return;
 
+    // Auto-repeat from a held key would rate one card per repeat and tear
+    // straight through the deck. Arrows may repeat — scrubbing is harmless.
+    if (event.repeat && event.key !== "ArrowLeft" && event.key !== "ArrowRight")
+      return;
+
     if (event.key === "Escape" && current !== "home") {
       event.preventDefault();
       renderHome();
@@ -936,13 +1229,12 @@
     if (current !== "study") return;
 
     var tag = document.activeElement ? document.activeElement.tagName : "";
-    var onCard = document.activeElement === $("card");
 
     switch (event.key) {
       case " ":
       case "Enter":
-        // Let real buttons do their own thing.
-        if (tag === "BUTTON" && !onCard) return;
+        // A focused button activates itself; don't flip on top of that.
+        if (tag === "BUTTON") return;
         event.preventDefault();
         study.flip();
         break;
@@ -971,12 +1263,28 @@
 
   function init() {
     var decks = window.FLASHCARD_DECKS;
-    if (!decks || !decks.length) return;
+    if (!Array.isArray(decks) || !decks.length) {
+      // Silently dead controls are worse than an error nobody wants to read.
+      var panel = $("deck-panel");
+      panel.className = "notice";
+      panel.textContent =
+        "Could not load the card decks. Check that decks.js sits next to index.html, then reload.";
+      $("home-actions").hidden = true;
+      $("deck-switch").hidden = true;
+      announce("The card decks could not be loaded.");
+      return;
+    }
+    allDecks = decks;
     deck = decks[0];
 
     store.load();
+    speech.init();
     setSound(store.sound);
     renderHome();
+
+    ["pointerdown", "keydown"].forEach(function (type) {
+      document.addEventListener(type, primeSpeech);
+    });
 
     document.addEventListener("click", onDocumentClick);
     document.addEventListener("keydown", onKeyDown);

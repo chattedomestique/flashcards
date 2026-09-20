@@ -31,7 +31,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Space+Mono:wght@700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
@@ -117,9 +117,11 @@
             <p class="tagline">See it. Hear it. Name it.</p>
           </div>
 
+          <div class="deck-switch" id="deck-switch" hidden></div>
+
           <div class="deck-tile" id="deck-panel"></div>
 
-          <div class="controls">
+          <div class="controls" id="home-actions">
             <button
               class="press btn btn-lg btn-primary"
               type="button"
@@ -157,14 +159,7 @@
           </div>
 
           <div class="deck-stage">
-            <article
-              class="card"
-              id="card"
-              data-face="front"
-              tabindex="0"
-              role="button"
-              aria-describedby="card-help"
-            >
+            <article class="card" id="card" data-face="front">
               <span
                 class="swipe-badge"
                 data-side="left"
@@ -184,7 +179,6 @@
                 <div class="card-face card-front">
                   <p class="card-kicker">What shape is this?</p>
                   <div class="shape-well" id="card-shape"></div>
-                  <span class="card-hint">Tap to reveal</span>
                 </div>
 
                 <div class="card-face card-back">
@@ -198,12 +192,23 @@
           </div>
 
           <p class="sr-only" id="card-help">
-            Press Enter or Space to reveal the answer. Press 1 to mark it for
-            another try, or 2 if you got it. Use the left and right arrow keys
-            to move between cards.
+            Reveals the answer, then reads it aloud again. Space flips the card
+            from anywhere. Press 1 to mark it for another try or 2 if you got
+            it, and use the left and right arrow keys to move between cards.
           </p>
 
           <div class="controls">
+            <button
+              class="press btn"
+              type="button"
+              id="card-action"
+              data-action="card-action"
+              aria-controls="card"
+              aria-expanded="false"
+              aria-describedby="card-help"
+            >
+              Reveal answer
+            </button>
             <div class="btn-row">
               <button
                 class="press btn btn-bad"
@@ -257,7 +262,18 @@
             aria-labelledby="quiz-question"
           ></div>
 
-          <p class="quiz-feedback" id="quiz-feedback"></p>
+          <div class="quiz-foot">
+            <p class="quiz-feedback" id="quiz-feedback"></p>
+            <button
+              class="press btn btn-primary"
+              type="button"
+              id="quiz-next"
+              data-action="quiz-next"
+              hidden
+            >
+              Next
+            </button>
+          </div>
         </section>
 
         <!-- ---------- summary ---------- -->
@@ -267,7 +283,9 @@
           aria-labelledby="summary-heading"
           hidden
         >
-          <div class="score-ring">
+          <ul class="tally" id="tally" hidden></ul>
+
+          <div class="score-ring" id="score-ring">
             <p class="score-value" id="score-value">0%</p>
             <p class="score-label">correct</p>
           </div>

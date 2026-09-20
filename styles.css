@@ -37,8 +37,8 @@
   --t5: #c39bff;
   --t6: #ffab5e;
 
-  --good: #4fe0ae;
-  --bad: #ff7a7a;
+  --good: var(--t4);
+  --bad: var(--t3);
 
   /* type — 1.25 modular scale on a 16px base */
   --fs-xs: 0.75rem;
@@ -60,7 +60,6 @@
   --s4: 16px;
   --s5: 24px;
   --s6: 32px;
-  --s7: 48px;
 
   /* form */
   --bw-1: 2px;
@@ -124,7 +123,7 @@ body {
   line-height: 1.5;
   color: var(--ink);
   background-color: var(--canvas);
-  background-image: radial-gradient(var(--dot) 1.6px, transparent 1.6px);
+  background-image: radial-gradient(var(--dot) 1.3px, transparent 1.7px);
   background-size: 22px 22px;
   background-position: -11px -11px;
   overscroll-behavior-y: none;
@@ -166,11 +165,18 @@ svg {
   display: none !important;
 }
 
-/* A single, consistent focus ring. Doubled so it reads on any tone. */
+/* One focus ring for the whole app. It is drawn with outline + a contrasting
+   ring in the SAME property, because box-shadow is already spoken for by the
+   elevation system and every .press rule would override it. */
 :focus-visible {
   outline: var(--bw-2) solid var(--ink);
   outline-offset: 3px;
-  box-shadow: 0 0 0 6px var(--canvas);
+}
+
+.press:focus-visible,
+.option:focus-visible {
+  outline-color: var(--ink);
+  outline-offset: 4px;
 }
 
 /* Focus moved by script for screen-reader context — announce it, don't draw it.
@@ -183,8 +189,8 @@ svg {
 
 .skip-link {
   position: absolute;
-  top: var(--s2);
-  left: var(--s2);
+  top: max(var(--s2), env(safe-area-inset-top));
+  left: max(var(--s2), env(safe-area-inset-left));
   z-index: 50;
   padding: var(--s2) var(--s4);
   color: var(--on-tone);
@@ -218,7 +224,20 @@ svg {
   display: flex;
   flex-direction: column;
   gap: var(--s4);
-  min-height: 100svh;
+  /* A definite height, so "the space that is left" is a number the card can be
+     measured against. Without it the column just grows and the rating buttons
+     get pushed off the bottom. Anything that genuinely needs more room scrolls. */
+  height: 100vh;
+  height: 100svh;
+  overflow-y: auto;
+  /* Explicit: with only overflow-y set, overflow-x computes to auto and a card
+     swiping off screen makes the page scroll sideways. `clip` rather than
+     `hidden` because hidden still leaves a programmatically scrollable box,
+     which focus changes can shunt sideways; clip cannot scroll at all.
+     `hidden` first as the fallback for engines without `clip`. */
+  overflow-x: hidden;
+  overflow-x: clip;
+  overscroll-behavior: contain;
   max-width: 560px;
   margin-inline: auto;
   padding: max(var(--s4), env(safe-area-inset-top))
@@ -247,16 +266,21 @@ svg {
 
 .main {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
 .screen {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: var(--s5);
-  animation: screen-in var(--dur-3) var(--ease-out) both;
+  /* `backwards`, not `both`: the end state is simply the natural one, and
+     `both` leaves an identity transform (and its compositor layer) on the
+     element for the life of the page. */
+  animation: screen-in var(--dur-3) var(--ease-out) backwards;
 }
 
 @keyframes screen-in {
@@ -296,6 +320,18 @@ svg {
 .press:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* Once a question is answered the options are locked, but the correct and
+   chosen ones ARE the feedback — never fade them out. aria-disabled rather
+   than :disabled, so they stay reachable for screen-reader review. */
+.option[aria-disabled="true"] {
+  pointer-events: none;
+  cursor: default;
+}
+
+.option[aria-disabled="true"]:not([data-result]) {
+  opacity: 0.5;
 }
 
 /* icon button ------------------------------------------------------------- */
@@ -413,12 +449,11 @@ svg {
 }
 
 .wordmark span {
-  color: var(--on-tone);
-  border-color: var(--on-tone);
   display: inline-block;
-  padding: 0 var(--s2);
+  padding: 0 var(--s2) 2px;
+  color: var(--on-tone);
   background: var(--t1);
-  border: var(--bw-2) solid var(--ink);
+  border: var(--bw-2) solid var(--on-tone);
   border-radius: var(--r-sm);
   box-shadow: var(--e2);
   transform: rotate(-2deg);
@@ -498,6 +533,44 @@ svg {
   border-right-width: 0;
 }
 
+.quiz-foot {
+  display: grid;
+  gap: var(--s3);
+  justify-items: center;
+  min-height: 56px;
+}
+
+.deck-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  justify-content: center;
+}
+
+.deck-switch button {
+  padding: var(--s2) var(--s4);
+  border-radius: 999px;
+  box-shadow: var(--e1);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  min-height: 40px;
+}
+
+.deck-switch button[aria-pressed="true"] {
+  background: var(--t1);
+  color: var(--on-tone);
+  border-color: var(--on-tone);
+}
+
+.notice {
+  padding: var(--s4);
+  border: var(--bw-2) solid var(--ink);
+  border-radius: var(--r-md);
+  background: var(--paper);
+  box-shadow: var(--e2);
+  text-align: center;
+}
+
 .linkbtn {
   font: inherit;
   color: var(--ink);
@@ -508,6 +581,8 @@ svg {
 
 .meter-label {
   display: flex;
+  align-items: center;
+  gap: var(--s2);
   justify-content: space-between;
   margin-top: var(--s2);
   font-family: var(--font-mono);
@@ -533,6 +608,11 @@ svg {
   width: 100%;
   max-width: 400px;
   aspect-ratio: 5 / 7;
+  /* The stage is sized by the flex column above, so this is literally "no
+     taller than the room left over" — the rating buttons always stay on screen.
+     min-height:0 is required: as a grid item the card's automatic minimum is
+     its aspect-ratio height, and min-height beats max-height. */
+  min-height: 0;
   max-height: 100%;
   perspective: 1400px;
   touch-action: pan-y;
@@ -545,6 +625,30 @@ svg {
   transition: transform var(--dur-3) var(--ease-spring);
 }
 
+/* The shadow belongs to the card, not to its faces — on a face it rotates
+   away with the flip and the light source swings 180 degrees mid-turn. */
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--r-lg);
+  box-shadow: var(--e4);
+  transition: box-shadow var(--dur-1) var(--ease-out);
+}
+
+.card.is-pressed::after {
+  box-shadow: 4px 4px 0 var(--shadow);
+}
+
+.card.is-pressed .card-inner {
+  transform: translate(3px, 3px);
+}
+
+.card[data-face="back"].is-pressed .card-inner {
+  transform: translate(3px, 3px) rotateY(180deg);
+}
+
 .card.is-leaving {
   transition:
     transform var(--dur-3) var(--ease-out),
@@ -554,7 +658,7 @@ svg {
 }
 
 .card.is-entering {
-  animation: card-in var(--dur-4) var(--ease-spring) both;
+  animation: card-in var(--dur-4) var(--ease-spring) backwards;
 }
 
 @keyframes card-in {
@@ -586,7 +690,6 @@ svg {
   border: var(--bw-3) solid var(--ink);
   border-radius: var(--r-lg);
   background: var(--paper);
-  box-shadow: var(--e4);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   overflow: hidden;
@@ -597,6 +700,9 @@ svg {
   justify-content: center;
   gap: var(--s3);
   text-align: center;
+  /* Clipping an answer would put content out of reach; let it scroll instead. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .card-kicker {
@@ -617,22 +723,8 @@ svg {
 }
 
 .shape-well svg {
-  width: min(62%, 210px);
+  width: min(70%, 230px);
   height: auto;
-}
-
-.card-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s2);
-  padding: var(--s2) var(--s3);
-  border: var(--bw-1) solid var(--ink);
-  border-radius: 999px;
-  background: var(--canvas);
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .shape-name {
@@ -682,7 +774,8 @@ svg {
   top: var(--s5);
   z-index: 2;
   padding: var(--s2) var(--s4);
-  border: var(--bw-2) solid var(--ink);
+  color: var(--on-tone);
+  border: var(--bw-2) solid var(--on-tone);
   border-radius: var(--r-sm);
   font-size: var(--fs-sm);
   font-weight: 700;
@@ -780,11 +873,7 @@ kbd {
   gap: var(--s3);
 }
 
-.quiz-options[data-kind="word"] {
-  grid-template-columns: 1fr 1fr;
-}
-
-.quiz-options[data-kind="shape"] {
+.quiz-options {
   grid-template-columns: 1fr 1fr;
 }
 
@@ -851,6 +940,36 @@ kbd {
   justify-content: center;
   text-align: center;
   gap: var(--s5);
+}
+
+.tally {
+  display: flex;
+  justify-content: center;
+  gap: var(--s3);
+  flex-wrap: wrap;
+}
+
+.tally li {
+  display: grid;
+  gap: 2px;
+  min-width: 108px;
+  padding: var(--s3) var(--s4);
+  border: var(--bw-2) solid var(--ink);
+  border-radius: var(--r-md);
+  background: var(--paper);
+  box-shadow: var(--e2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.tally b {
+  font-size: var(--fs-2xl);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
 
 .score-ring {
@@ -935,7 +1054,7 @@ kbd {
 .toast {
   position: fixed;
   left: 50%;
-  bottom: max(var(--s5), env(safe-area-inset-bottom));
+  top: max(var(--s2), env(safe-area-inset-top));
   z-index: 40;
   display: flex;
   align-items: center;
@@ -947,7 +1066,7 @@ kbd {
   box-shadow: var(--e3);
   font-size: var(--fs-sm);
   font-weight: 700;
-  transform: translate(-50%, 150%);
+  transform: translate(-50%, -200%);
   transition: transform var(--dur-3) var(--ease-spring);
 }
 
@@ -969,24 +1088,138 @@ kbd {
 
 /* --- responsive ----------------------------------------------------------- */
 
-/* Short viewports (landscape phones): let the page scroll instead of clipping,
-   and stop the card from demanding height it cannot have. */
+/* Short viewports (landscape phones). The card and its rating buttons have to
+   be visible together — a card you must scroll to answer is not a flashcard —
+   so the card takes whatever height is left over rather than asking for a
+   fixed amount and pushing the controls off the bottom. */
 @media (max-height: 620px) {
   .app {
+    gap: var(--s2);
+  }
+
+  .screen {
     gap: var(--s3);
   }
 
   .card {
+    /* Let it go wide and short rather than insisting on portrait proportions. */
     aspect-ratio: auto;
-    height: 300px;
+    height: 100%;
+    min-height: 104px;
+  }
+
+  .card-face {
+    padding: var(--s3);
   }
 
   .shape-well svg {
-    width: min(40%, 150px);
+    width: min(34%, 120px);
+  }
+
+  .shape-name {
+    font-size: var(--fs-xl);
   }
 
   .home {
-    gap: var(--s5);
+    gap: var(--s4);
+  }
+
+  /* No room for the shortcut legend; the shortcuts still work. */
+  .keyhint {
+    display: none;
+  }
+
+  .app {
+    padding-bottom: max(var(--s3), env(safe-area-inset-bottom));
+  }
+
+  .wordmark {
+    font-size: var(--fs-2xl);
+  }
+
+  .deck-tile {
+    padding: var(--s4);
+  }
+
+  .deck-preview {
+    margin: var(--s3) 0;
+  }
+
+  .deck-preview svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .btn-lg {
+    min-height: 52px;
+    font-size: var(--fs-md);
+  }
+
+  .score-ring {
+    width: 150px;
+    height: 150px;
+  }
+
+  .score-ring::after {
+    inset: 18px;
+  }
+}
+
+/* Very short viewports (small phones in landscape, ~320px tall). Trim the
+   chrome rather than the card, and keep every target above the 24px minimum. */
+@media (max-height: 430px) {
+  .topbar {
+    min-height: 38px;
+  }
+
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .btn,
+  .btn-lg {
+    min-height: 46px;
+  }
+
+  .meter {
+    height: 12px;
+  }
+
+  .card-kicker {
+    display: none;
+  }
+}
+
+/* Landscape has width to spare and no height. Use the shape rather than just
+   shrinking everything: brand and deck on the left, the two actions beside
+   them, so home stops scrolling. */
+@media (max-height: 620px) and (min-width: 600px) {
+  .app {
+    max-width: 860px;
+  }
+
+  .home {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    grid-template-areas:
+      "brand actions"
+      "deck actions";
+    align-content: center;
+    gap: var(--s4) var(--s5);
+  }
+
+  .home > div:first-child {
+    grid-area: brand;
+  }
+
+  #deck-panel {
+    grid-area: deck;
+  }
+
+  .home .controls {
+    grid-area: actions;
+    align-self: center;
   }
 }
 
