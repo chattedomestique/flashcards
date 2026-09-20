@@ -14,12 +14,11 @@
   "use strict";
 
   var SVG_NS = "http://www.w3.org/2000/svg";
-  var SLOP = 8; // px of travel before a press counts as a drag
-  var COMMIT_RATIO = 0.28; // of card width
-  var COMMIT_MAX = 120; // px — a wide card shouldn't demand a long haul
-  var FLICK = 0.45; // px/ms
-  var FLICK_MIN = 40; // px — a flick still has to be a deliberate one
-  var RUBBER = 0.32; // resistance when pulling past either end
+  var SLOP = 4; // px of travel before a press counts as a drag
+  var COMMIT_RATIO = 0.13; // of card width
+  var COMMIT_MAX = 48; // px — a wide card shouldn't demand a long haul
+  var FLICK = 0.15; // px/ms
+  var FLICK_MIN = 10; // px
   var FACE_RESET_MS = 600; // after a move, once the old card is out of sight
 
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -64,7 +63,7 @@
           ") translate(-50 -50)",
       );
     }
-    path.setAttribute("stroke-width", String(7 / s));
+    path.setAttribute("stroke-width", String(3.5 / s));
     path.style.fill = "var(--t" + shape.tone + ")";
     path.style.stroke = "var(--ink)";
 
@@ -115,24 +114,31 @@
 
   /* ---------------------------------------------------------------- render */
 
+  /** Shortest signed distance from the current card, wrapping both ways — this
+      is what makes the carousel endless: card 0 is one step after card 11. */
+  function offsetOf(i) {
+    var n = cards.length;
+    var off = (((i - index) % n) + n) % n; // 0 .. n-1
+    if (off > n / 2) off -= n; // -n/2 .. n/2
+    return off;
+  }
+
   /** Position every card relative to the current one. This is the only thing
       that changes when you move through the deck. */
   function place() {
+    // Mark the far cards and flush first, so the ones about to wrap the long
+    // way round have their transition switched off BEFORE they move.
     cards.forEach(function (card, i) {
-      var offset = i - index;
-      var pos =
-        offset === 0
-          ? "current"
-          : offset === 1
-            ? "next"
-            : offset > 1
-              ? "behind"
-              : "past";
-      if (card.dataset.pos !== pos) card.dataset.pos = pos;
+      var off = offsetOf(i);
+      card.dataset.far = Math.abs(off) >= 2 ? "1" : "0";
+      card.dataset.near = Math.abs(off) <= 1 ? "1" : "0";
+    });
+    void deck.offsetWidth;
 
-      var isCurrent = offset === 0;
-      // Only the side you are looking at belongs in the accessibility tree,
-      // or the name is readable before the card is ever turned.
+    cards.forEach(function (card, i) {
+      var off = offsetOf(i);
+      var isCurrent = off === 0;
+      card.style.setProperty("--offset", String(off));
       syncFaces(card);
       card.setAttribute("aria-hidden", isCurrent ? "false" : "true");
       card.inert = !isCurrent;
@@ -172,9 +178,8 @@
   /* ------------------------------------------------------------- behaviour */
 
   function go(delta) {
-    var next = index + delta;
-    if (next < 0 || next >= cards.length) return false;
-    index = next;
+    var n = cards.length;
+    index = (((index + delta) % n) + n) % n; // wraps in both directions
     place();
     announce("Shape " + (index + 1) + " of " + cards.length + ".");
 
@@ -228,8 +233,9 @@
   function onPointerDown(event) {
     if (!event.isPrimary) return;
     if (event.pointerType === "mouse" && event.button !== 0) return;
-    var card = event.target.closest ? event.target.closest(".card") : null;
-    if (!card || card !== current()) return;
+    // Anywhere in the deck counts. Requiring the press to land on the current
+    // card rejects a touch that catches a neighbour's sliver mid-slide.
+    if (!event.target.closest || !event.target.closest(".deck")) return;
 
     drag.id = event.pointerId;
     drag.startX = drag.lastX = event.clientX;
@@ -239,7 +245,7 @@
     drag.vx = 0;
     drag.active = false;
     drag.moved = false;
-    card.classList.add("is-pressed");
+    current().classList.add("is-pressed");
   }
 
   function onPointerMove(event) {
@@ -248,9 +254,9 @@
     var dy = event.clientY - drag.startY;
 
     if (!drag.active) {
-      // Claim the gesture only once it is clearly horizontal, so the page can
-      // still be scrolled vertically.
-      if (Math.abs(dx) < SLOP || Math.abs(dx) <= Math.abs(dy)) return;
+      // Mostly-horizontal is enough. Demanding dx > dy outright rejects the
+      // slight diagonal that a real thumb actually draws.
+      if (Math.abs(dx) < SLOP || Math.abs(dx) < Math.abs(dy) * 0.6) return;
       drag.active = true;
       drag.moved = true;
       deck.classList.add("is-dragging");
@@ -266,17 +272,10 @@
     drag.lastX = event.clientX;
     drag.lastT = event.timeStamp;
 
-    // Resist past either end so the deck feels finite rather than broken.
-    var atEnd =
-      (dx < 0 && index === cards.length - 1) || (dx > 0 && index === 0);
-    drag.dx = atEnd ? dx * RUBBER : dx;
-
-    current().style.transform =
-      "translate3d(" + drag.dx + "px, 0, 0) rotate(" + drag.dx / 28 + "deg)";
-    deck.style.setProperty(
-      "--drag",
-      String(Math.min(Math.max(-drag.dx / commitDistance(), 0), 1)),
-    );
+    // The carousel is endless, so there is no end to resist against: the whole
+    // strip simply follows the finger.
+    drag.dx = dx;
+    deck.style.setProperty("--dx", drag.dx + "px");
   }
 
   function endDrag(event) {
@@ -295,8 +294,7 @@
     drag.active = false;
 
     deck.classList.remove("is-dragging");
-    card.style.transform = "";
-    deck.style.setProperty("--drag", "0");
+    deck.style.setProperty("--dx", "0px");
 
     if (!wasActive) {
       if (event.type === "pointerup") flip();
@@ -313,12 +311,7 @@
   /* -------------------------------------------------------------- controls */
 
   function onClick(event) {
-    var target = event.target.closest
-      ? event.target.closest("[data-go], [data-flip]")
-      : null;
-    if (!target) return;
-    if (target.hasAttribute("data-flip")) flip();
-    else go(Number(target.getAttribute("data-go")));
+    if (event.target.closest && event.target.closest("[data-flip]")) flip();
   }
 
   function onKeyDown(event) {
@@ -350,10 +343,6 @@
       case "Home":
         event.preventDefault();
         go(-index);
-        break;
-      case "End":
-        event.preventDefault();
-        go(cards.length - 1 - index);
         break;
       default:
         break;
@@ -387,8 +376,15 @@
       return;
     }
 
+    // Place everything before the first paint can animate it.
+    deck.classList.add("is-booting");
     build();
     place();
+    window.requestAnimationFrame(function () {
+      window.requestAnimationFrame(function () {
+        deck.classList.remove("is-booting");
+      });
+    });
 
     deck.addEventListener("pointerdown", onPointerDown);
     deck.addEventListener("pointermove", onPointerMove);

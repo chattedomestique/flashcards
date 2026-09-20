@@ -40,13 +40,11 @@
   --dur-flip: 560ms;
   --dur-move: 520ms;
   --dur-press: 130ms;
+  --gap: 28px;
   --ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-exit: cubic-bezier(0.4, 0, 0.7, 0.2);
   --ease-settle: cubic-bezier(0.34, 1.35, 0.64, 1);
   --ease-flip: cubic-bezier(0.62, 0.04, 0.3, 1);
-
-  --peek-y: 18px;
-  --peek-scale: 0.93;
 }
 
 /* Real springs where the engine has linear() — a touch of overshoot on arrival
@@ -165,21 +163,37 @@ h1 {
   aspect-ratio: 5 / 7;
   max-height: 100%;
   margin: auto;
-  /* Room for the peeking card and the hard shadow without clipping either. */
-  padding-bottom: calc(var(--peek-y) + 14px);
+  /* Room for the hard shadow without clipping it. */
+  padding-bottom: 14px;
+  /* The strip runs off both sides; clip it so it never reaches the page's
+     scroll width. The margin has to clear the current card's 10px shadow, and
+     --gap has to clear the margin, or the NEXT card's shadow shows as a black
+     bar down the edge of the screen. */
+  overflow: clip;
+  overflow-clip-margin: 12px;
   perspective: 1600px;
 }
 
 .card {
   position: absolute;
-  inset: 0 0 auto;
-  height: calc(100% - var(--peek-y) - 14px);
-  transform-origin: 50% 60%;
-  transition:
-    transform var(--dur-move) var(--ease-settle),
-    opacity calc(var(--dur-move) * 0.6) var(--ease-enter);
+  inset: 0;
+  /* The whole strip is one row: card N sits N widths to the right of the
+     current one. Moving the deck is a single horizontal translation, so
+     forward and backward are the same motion mirrored — never a cross-fade,
+     and nothing ever fades in or out on top of anything else. */
+  transform: translate3d(
+    calc(
+      var(--offset, 0) * 100% + var(--offset, 0) * var(--gap) + var(--dx, 0px)
+    ),
+    0,
+    0
+  );
+  transition: transform var(--dur-move) var(--ease-settle);
   cursor: grab;
-  touch-action: pan-y;
+  /* Nothing on this page scrolls, so take the gesture outright rather than
+     waiting for the browser to decide it is not a scroll. That wait is what
+     made swiping feel like it needed a shove. */
+  touch-action: none;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -188,49 +202,22 @@ h1 {
   cursor: grabbing;
 }
 
-/* Position in the deck. Nothing else about a card ever changes. */
-.card[data-pos="current"] {
-  transform: translate3d(0, 0, 0) scale(1);
-  opacity: 1;
-  z-index: 3;
-}
-
-.card[data-pos="next"] {
-  transform: translate3d(0, calc(var(--peek-y) * (1 - var(--drag, 0))), 0)
-    scale(calc(var(--peek-scale) + (1 - var(--peek-scale)) * var(--drag, 0)));
-  opacity: 1;
-  z-index: 2;
-}
-
-.card[data-pos="behind"] {
-  transform: translate3d(0, calc(var(--peek-y) * 1.7), 0) scale(0.87);
-  opacity: 0;
-  z-index: 1;
-}
-
-/* Cards already seen park off to the left, ready to slide back in. */
-.card[data-pos="past"] {
-  transform: translate3d(-130%, 0, 0) rotate(-11deg) scale(0.95);
-  opacity: 0;
-  z-index: 4;
-  transition:
-    transform var(--dur-move) var(--ease-exit),
-    opacity calc(var(--dur-move) * 0.7) var(--ease-exit);
-}
-
-.card[data-pos="current"],
-.card[data-pos="next"] {
-  pointer-events: auto;
-}
-
-.card[data-pos="behind"],
-.card[data-pos="past"] {
-  pointer-events: none;
-}
-
-/* A dragged card must track the finger exactly — no transition in the way. */
-.deck.is-dragging .card {
+/* A dragged strip must track the finger exactly — no transition in the way. */
+.deck.is-dragging .card,
+/* ...and on first paint every card is still stacked at offset 0, so without
+   this they all visibly fly out to their places as the page loads. */
+.deck.is-booting .card {
   transition: none;
+}
+
+/* Cards more than one step away are off screen. When the carousel wraps they
+   jump the long way round, so they must not animate across the viewport. */
+.card[data-far="1"] {
+  transition: none;
+}
+
+.card[data-near="0"] {
+  pointer-events: none;
 }
 
 /* --- the card itself ------------------------------------------------------ */
@@ -348,7 +335,7 @@ h1 {
 
 .btn-flip {
   flex: 1;
-  width: auto;
+  width: 100%;
   font-size: 1.05rem;
   letter-spacing: 0.01em;
   background: var(--t1);
@@ -431,32 +418,16 @@ h1 {
    outgoing face finishes before the incoming one starts. */
 
 @media (prefers-reduced-motion: reduce) {
+  /* The carousel still slides — a horizontal move is mild, and a cross-fade
+     here is what read as broken. What goes is the overshoot: the spring is
+     replaced by a plain decelerate so nothing bounces past its mark. */
   .card {
-    transition:
-      opacity 300ms var(--ease-enter),
-      transform 300ms var(--ease-enter);
+    transition: transform 380ms var(--ease-enter);
   }
 
-  .card[data-pos="current"] {
-    transform: none;
-    opacity: 1;
-  }
-
-  .card[data-pos="next"],
-  .card[data-pos="behind"] {
-    transform: scale(0.97);
-    opacity: 0;
-  }
-
-  .card[data-pos="past"] {
-    transform: scale(0.97);
-    opacity: 0;
-    transition:
-      opacity 220ms var(--ease-exit),
-      transform 220ms var(--ease-exit);
-  }
-
-  /* The flip becomes a sequenced dissolve: out, then in. Never a 50/50 ghost. */
+  /* The flip has no non-3D equivalent, so it becomes a sequenced dissolve:
+     the outgoing face reaches zero before the incoming one starts, so the two
+     are never both on screen. */
   .card-inner {
     transform: none !important;
     transform-style: flat;
