@@ -1,33 +1,29 @@
 /* ==========================================================================
-   Flashcards — refined neo-brutalism
+   Shapes
    --------------------------------------------------------------------------
-   Two rules hold the visual system together:
+   Two rules hold the motion together:
 
-   1. ELEVATION SCALES WITH WEIGHT. A chip does not cast the same shadow as a
-      card. Four steps, --e1 through --e4.
+   1. ONLY TRANSFORM AND OPACITY ANIMATE. Every card in the deck is rendered
+      once and never re-rendered; moving through the deck changes a position
+      attribute and nothing else. The browser interpolates compositor
+      properties and never repaints content mid-transition, which is what
+      stops the flashing.
 
-   2. THE LIGHT SOURCE NEVER MOVES. In every interaction state the shadow's
-      far edge stays at the same point: an element that travels 3px toward the
-      shadow loses exactly 3px of shadow. Rest 4+0, hover 6-2, press 1+3 — all
-      land on 4. That is what makes the press feel physical instead of jumpy.
+   2. REDUCED MOTION MEANS GENTLER, NOT INSTANT. Killing every duration turns
+      an app into jump cuts for exactly the people who asked for calm. Under
+      `reduce` the choreography survives: the same timings and the same easing,
+      with travel and rotation swapped for opacity and a small scale.
    ========================================================================== */
-
-/* --- tokens --------------------------------------------------------------- */
 
 :root {
   color-scheme: light dark;
 
-  /* surface */
   --canvas: #fff2dc;
   --paper: #fffdf7;
   --ink: #14120e;
   --ink-soft: #5d5648;
   --shadow: #14120e;
-  --dot: #e2d4b7;
-
-  /* Tones stay mid-bright in BOTH colour schemes, so anything they fill keeps
-     dark ink on top. --on-tone deliberately does not invert with --ink: in dark
-     mode a white label on mint is 1.8:1, which is unreadable. */
+  --dot: #e4d7bb;
   --on-tone: #14120e;
 
   --t1: #ffd400;
@@ -37,52 +33,53 @@
   --t5: #c39bff;
   --t6: #ffab5e;
 
-  --good: var(--t4);
-  --bad: var(--t3);
-
-  /* type — 1.25 modular scale on a 16px base */
-  --fs-xs: 0.75rem;
-  --fs-sm: 0.875rem;
-  --fs-md: 1rem;
-  --fs-lg: 1.25rem;
-  --fs-xl: 1.5625rem;
-  --fs-2xl: 1.953rem;
-  --fs-3xl: 2.441rem;
-
-  --font-display:
-    "Space Grotesk", ui-rounded, "Segoe UI", system-ui, sans-serif;
-  --font-mono: "Space Mono", ui-monospace, "SF Mono", Menlo, monospace;
-
-  /* space — 4px rhythm */
-  --s1: 4px;
-  --s2: 8px;
-  --s3: 12px;
-  --s4: 16px;
-  --s5: 24px;
-  --s6: 32px;
-
-  /* form */
-  --bw-1: 2px;
-  --bw-2: 3px;
-  --bw-3: 4px;
-  --r-sm: 8px;
-  --r-md: 14px;
-  --r-lg: 22px;
-
-  /* elevation */
-  --e1: 2px 2px 0 var(--shadow);
-  --e2: 4px 4px 0 var(--shadow);
-  --e3: 6px 6px 0 var(--shadow);
-  --e4: 10px 10px 0 var(--shadow);
+  --bw: 4px;
+  --radius: 26px;
 
   /* motion */
-  --dur-1: 110ms;
-  --dur-2: 200ms;
-  --dur-3: 320ms;
-  --dur-4: 440ms;
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-flip: 560ms;
+  --dur-move: 520ms;
+  --dur-press: 130ms;
+  --ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 0.7, 0.2);
+  --ease-settle: cubic-bezier(0.34, 1.35, 0.64, 1);
+  --ease-flip: cubic-bezier(0.62, 0.04, 0.3, 1);
+
+  --peek-y: 18px;
+  --peek-scale: 0.93;
+}
+
+/* Real springs where the engine has linear() — a touch of overshoot on arrival
+   is what separates "moved" from "landed". */
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --ease-settle: linear(
+      0,
+      0.295 10%,
+      0.733 20%,
+      0.999 30%,
+      1.082 40%,
+      1.067 50%,
+      1.029 60%,
+      1.003 70%,
+      0.994 80%,
+      0.994 90%,
+      1
+    );
+    --ease-flip: linear(
+      0,
+      0.228 10%,
+      0.574 20%,
+      0.821 30%,
+      0.951 40%,
+      1.003 50%,
+      1.015 60%,
+      1.013 70%,
+      1.007 80%,
+      1.003 90%,
+      1
+    );
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -93,7 +90,6 @@
     --ink-soft: #b0a892;
     --shadow: #000000;
     --dot: #332e22;
-
     --t1: #e8c200;
     --t2: #5a86f0;
     --t3: #ef6a6a;
@@ -102,8 +98,6 @@
     --t6: #ec9750;
   }
 }
-
-/* --- reset ---------------------------------------------------------------- */
 
 *,
 *::before,
@@ -118,92 +112,19 @@ html {
 body {
   margin: 0;
   min-height: 100svh;
-  font-family: var(--font-display);
-  font-size: var(--fs-md);
-  line-height: 1.5;
+  font-family:
+    "Space Grotesk", ui-rounded, "Avenir Next", system-ui, sans-serif;
   color: var(--ink);
   background-color: var(--canvas);
   background-image: radial-gradient(var(--dot) 1.3px, transparent 1.7px);
   background-size: 22px 22px;
   background-position: -11px -11px;
-  overscroll-behavior-y: none;
+  overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
 }
 
-h1,
-h2,
-h3,
-p,
-ul,
-figure {
+h1 {
   margin: 0;
-  padding: 0;
-}
-
-ul {
-  list-style: none;
-}
-
-button {
-  font: inherit;
-  color: inherit;
-  margin: 0;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-  touch-action: manipulation;
-}
-
-svg {
-  display: block;
-}
-
-[hidden] {
-  display: none !important;
-}
-
-/* One focus ring for the whole app. It is drawn with outline + a contrasting
-   ring in the SAME property, because box-shadow is already spoken for by the
-   elevation system and every .press rule would override it. */
-:focus-visible {
-  outline: var(--bw-2) solid var(--ink);
-  outline-offset: 3px;
-}
-
-.press:focus-visible,
-.option:focus-visible {
-  outline-color: var(--ink);
-  outline-offset: 4px;
-}
-
-/* Focus moved by script for screen-reader context — announce it, don't draw it.
-   These are never Tab-reachable, so no keyboard affordance is lost. */
-[tabindex="-1"]:focus,
-[tabindex="-1"]:focus-visible {
-  outline: none;
-  box-shadow: none;
-}
-
-.skip-link {
-  position: absolute;
-  top: max(var(--s2), env(safe-area-inset-top));
-  left: max(var(--s2), env(safe-area-inset-left));
-  z-index: 50;
-  padding: var(--s2) var(--s4);
-  color: var(--on-tone);
-  border: var(--bw-2) solid var(--on-tone);
-  border-radius: var(--r-sm);
-  background: var(--t1);
-  font-weight: 700;
-  text-decoration: none;
-  transform: translateY(-200%);
-}
-
-.skip-link:focus-visible {
-  transform: translateY(0);
 }
 
 .sr-only {
@@ -211,1042 +132,331 @@ svg {
   width: 1px;
   height: 1px;
   margin: -1px;
-  padding: 0;
   overflow: hidden;
-  white-space: nowrap;
   clip-path: inset(50%);
-  border: 0;
+  white-space: nowrap;
 }
 
-/* --- shell ---------------------------------------------------------------- */
+/* --- layout --------------------------------------------------------------- */
 
 .app {
   display: flex;
   flex-direction: column;
-  gap: var(--s4);
-  /* A definite height, so "the space that is left" is a number the card can be
-     measured against. Without it the column just grows and the rating buttons
-     get pushed off the bottom. Anything that genuinely needs more room scrolls. */
+  align-items: center;
+  gap: clamp(20px, 5vh, 40px);
   height: 100vh;
   height: 100svh;
-  overflow-y: auto;
-  /* Explicit: with only overflow-y set, overflow-x computes to auto and a card
-     swiping off screen makes the page scroll sideways. `clip` rather than
-     `hidden` because hidden still leaves a programmatically scrollable box,
-     which focus changes can shunt sideways; clip cannot scroll at all.
-     `hidden` first as the fallback for engines without `clip`. */
-  overflow-x: hidden;
-  overflow-x: clip;
-  overscroll-behavior: contain;
-  max-width: 560px;
+  max-width: 520px;
   margin-inline: auto;
-  padding: max(var(--s4), env(safe-area-inset-top))
-    max(var(--s4), env(safe-area-inset-right))
-    max(var(--s5), env(safe-area-inset-bottom))
-    max(var(--s4), env(safe-area-inset-left));
+  padding: max(24px, env(safe-area-inset-top)) 22px
+    max(24px, env(safe-area-inset-bottom));
 }
 
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: var(--s3);
-  min-height: 48px;
-}
+/* --- the deck ------------------------------------------------------------- */
 
-.topbar-title {
-  flex: 1;
-  min-width: 0;
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  text-align: center;
-  color: var(--ink-soft);
-}
-
-.main {
-  flex: 1;
+.deck {
+  position: relative;
+  /* 0 so it never grows past its aspect ratio; it may still shrink. */
+  flex: 0 1 auto;
+  width: 100%;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.screen {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--s5);
-  /* `backwards`, not `both`: the end state is simply the natural one, and
-     `both` leaves an identity transform (and its compositor layer) on the
-     element for the life of the page. */
-  animation: screen-in var(--dur-3) var(--ease-out) backwards;
-}
-
-@keyframes screen-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-}
-
-/* --- pressable: the shared physics ---------------------------------------- */
-
-.press {
-  border: var(--bw-2) solid var(--ink);
-  border-radius: var(--r-md);
-  background: var(--paper);
-  color: var(--ink);
-  box-shadow: var(--e2);
-  transition:
-    transform var(--dur-1) var(--ease-out),
-    box-shadow var(--dur-1) var(--ease-out),
-    background-color var(--dur-2) var(--ease-out);
-}
-
-@media (hover: hover) {
-  .press:not(:disabled):hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0 var(--shadow);
-  }
-}
-
-.press:not(:disabled):active,
-.press.is-pressed {
-  transform: translate(3px, 3px);
-  box-shadow: 1px 1px 0 var(--shadow);
-}
-
-.press:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-/* Once a question is answered the options are locked, but the correct and
-   chosen ones ARE the feedback — never fade them out. aria-disabled rather
-   than :disabled, so they stay reachable for screen-reader review. */
-.option[aria-disabled="true"] {
-  pointer-events: none;
-  cursor: default;
-}
-
-.option[aria-disabled="true"]:not([data-result]) {
-  opacity: 0.5;
-}
-
-/* icon button ------------------------------------------------------------- */
-
-.icon-btn {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  flex: none;
-  border-radius: var(--r-sm);
-  box-shadow: var(--e1);
-}
-
-@media (hover: hover) {
-  .icon-btn:not(:disabled):hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 3px 3px 0 var(--shadow);
-  }
-}
-
-.icon-btn:not(:disabled):active,
-.icon-btn.is-pressed {
-  transform: translate(2px, 2px);
-  box-shadow: 0 0 0 var(--shadow);
-}
-
-.icon-btn svg {
-  width: 22px;
-  height: 22px;
-}
-
-.icon-btn[aria-pressed="false"] {
-  background: var(--canvas);
-  color: var(--ink-soft);
-}
-
-.icon-btn[aria-pressed="true"] {
-  background: var(--t1);
-  color: var(--on-tone);
-  border-color: var(--on-tone);
-}
-
-/* buttons ----------------------------------------------------------------- */
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--s2);
-  min-height: 52px;
-  padding: var(--s3) var(--s5);
-  font-size: var(--fs-md);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.btn-lg {
-  min-height: 60px;
-  font-size: var(--fs-lg);
-  box-shadow: var(--e3);
-}
-
-@media (hover: hover) {
-  .btn-lg:not(:disabled):hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 8px 8px 0 var(--shadow);
-  }
-}
-
-.btn-lg:not(:disabled):active,
-.btn-lg.is-pressed {
-  transform: translate(4px, 4px);
-  box-shadow: 2px 2px 0 var(--shadow);
-}
-
-.btn-primary,
-.btn-good,
-.btn-bad {
-  color: var(--on-tone);
-  border-color: var(--on-tone);
-}
-
-.btn-primary {
-  background: var(--t1);
-}
-
-.btn-good {
-  background: var(--good);
-}
-
-.btn-bad {
-  background: var(--bad);
-}
-
-.btn-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--s3);
-}
-
-/* --- home ----------------------------------------------------------------- */
-
-.home {
-  justify-content: center;
-  gap: var(--s6);
-}
-
-.wordmark {
-  font-size: var(--fs-3xl);
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  text-align: center;
-}
-
-.wordmark span {
-  display: inline-block;
-  padding: 0 var(--s2) 2px;
-  color: var(--on-tone);
-  background: var(--t1);
-  border: var(--bw-2) solid var(--on-tone);
-  border-radius: var(--r-sm);
-  box-shadow: var(--e2);
-  transform: rotate(-2deg);
-}
-
-.tagline {
-  text-align: center;
-  color: var(--ink-soft);
-  font-size: var(--fs-sm);
-  margin-top: var(--s3);
-}
-
-.deck-tile {
-  padding: var(--s5);
-  border: var(--bw-2) solid var(--ink);
-  border-radius: var(--r-lg);
-  background: var(--paper);
-  box-shadow: var(--e3);
-}
-
-.deck-tile-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--s3);
-}
-
-.deck-tile-name {
-  font-size: var(--fs-xl);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.deck-tile-count {
-  font-family: var(--font-mono);
-  font-size: var(--fs-sm);
-  color: var(--ink-soft);
-}
-
-.deck-tile-blurb {
-  margin-top: var(--s1);
-  color: var(--ink-soft);
-  font-size: var(--fs-sm);
-}
-
-.deck-preview {
-  display: flex;
-  gap: var(--s2);
-  margin: var(--s4) 0;
-}
-
-.deck-preview svg {
-  width: 30px;
-  height: 30px;
-  flex: none;
-}
-
-/* progress bar ------------------------------------------------------------ */
-
-.meter {
-  height: 16px;
-  border: var(--bw-1) solid var(--ink);
-  border-radius: 999px;
-  background: var(--paper);
-  overflow: hidden;
-}
-
-.meter-fill {
-  height: 100%;
-  width: 0%;
-  background: var(--t4);
-  border-right: var(--bw-1) solid var(--on-tone);
-  transition: width var(--dur-4) var(--ease-out);
-}
-
-.meter-fill[style*="width: 0%"] {
-  border-right-width: 0;
-}
-
-.quiz-foot {
-  display: grid;
-  gap: var(--s3);
-  justify-items: center;
-  min-height: 56px;
-}
-
-.deck-switch {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s2);
-  justify-content: center;
-}
-
-.deck-switch button {
-  padding: var(--s2) var(--s4);
-  border-radius: 999px;
-  box-shadow: var(--e1);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  min-height: 40px;
-}
-
-.deck-switch button[aria-pressed="true"] {
-  background: var(--t1);
-  color: var(--on-tone);
-  border-color: var(--on-tone);
-}
-
-.notice {
-  padding: var(--s4);
-  border: var(--bw-2) solid var(--ink);
-  border-radius: var(--r-md);
-  background: var(--paper);
-  box-shadow: var(--e2);
-  text-align: center;
-}
-
-.linkbtn {
-  font: inherit;
-  color: var(--ink);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  border-radius: var(--r-sm);
-}
-
-.meter-label {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  justify-content: space-between;
-  margin-top: var(--s2);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  color: var(--ink-soft);
-}
-
-/* --- the card ------------------------------------------------------------- */
-
-.deck-stage {
-  flex: 1;
-  display: grid;
-  place-items: center;
-  min-height: 0;
-  padding: var(--s2) 0;
+  /* A card shape, not a column-filling slab — and never taller than the room
+     that is actually left. `margin: auto` centres whatever is smaller. */
+  aspect-ratio: 5 / 7;
+  max-height: 100%;
+  margin: auto;
+  /* Room for the peeking card and the hard shadow without clipping either. */
+  padding-bottom: calc(var(--peek-y) + 14px);
+  perspective: 1600px;
 }
 
 .card {
-  /* The drag surface. Perspective lives here so the flip inside renders in 3D
-     without needing preserve-3d on any ancestor — which is what made the old
-     build turn the whole screen backwards. */
-  position: relative;
-  width: 100%;
-  max-width: 400px;
-  aspect-ratio: 5 / 7;
-  /* The stage is sized by the flex column above, so this is literally "no
-     taller than the room left over" — the rating buttons always stay on screen.
-     min-height:0 is required: as a grid item the card's automatic minimum is
-     its aspect-ratio height, and min-height beats max-height. */
-  min-height: 0;
-  max-height: 100%;
-  perspective: 1400px;
+  position: absolute;
+  inset: 0 0 auto;
+  height: calc(100% - var(--peek-y) - 14px);
+  transform-origin: 50% 60%;
+  transition:
+    transform var(--dur-move) var(--ease-settle),
+    opacity calc(var(--dur-move) * 0.6) var(--ease-enter);
+  cursor: grab;
   touch-action: pan-y;
-  cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
 }
 
-.card.is-settling {
-  transition: transform var(--dur-3) var(--ease-spring);
+.card:active {
+  cursor: grabbing;
 }
 
-/* The shadow belongs to the card, not to its faces — on a face it rotates
-   away with the flip and the light source swings 180 degrees mid-turn. */
-.card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: var(--r-lg);
-  box-shadow: var(--e4);
-  transition: box-shadow var(--dur-1) var(--ease-out);
+/* Position in the deck. Nothing else about a card ever changes. */
+.card[data-pos="current"] {
+  transform: translate3d(0, 0, 0) scale(1);
+  opacity: 1;
+  z-index: 3;
 }
 
-.card.is-pressed::after {
-  box-shadow: 4px 4px 0 var(--shadow);
+.card[data-pos="next"] {
+  transform: translate3d(0, calc(var(--peek-y) * (1 - var(--drag, 0))), 0)
+    scale(calc(var(--peek-scale) + (1 - var(--peek-scale)) * var(--drag, 0)));
+  opacity: 1;
+  z-index: 2;
 }
 
-.card.is-pressed .card-inner {
-  transform: translate(3px, 3px);
-}
-
-.card[data-face="back"].is-pressed .card-inner {
-  transform: translate(3px, 3px) rotateY(180deg);
-}
-
-.card.is-leaving {
-  transition:
-    transform var(--dur-3) var(--ease-out),
-    opacity var(--dur-3) var(--ease-out);
+.card[data-pos="behind"] {
+  transform: translate3d(0, calc(var(--peek-y) * 1.7), 0) scale(0.87);
   opacity: 0;
+  z-index: 1;
+}
+
+/* Cards already seen park off to the left, ready to slide back in. */
+.card[data-pos="past"] {
+  transform: translate3d(-130%, 0, 0) rotate(-11deg) scale(0.95);
+  opacity: 0;
+  z-index: 4;
+  transition:
+    transform var(--dur-move) var(--ease-exit),
+    opacity calc(var(--dur-move) * 0.7) var(--ease-exit);
+}
+
+.card[data-pos="current"],
+.card[data-pos="next"] {
+  pointer-events: auto;
+}
+
+.card[data-pos="behind"],
+.card[data-pos="past"] {
   pointer-events: none;
 }
 
-.card.is-entering {
-  animation: card-in var(--dur-4) var(--ease-spring) backwards;
+/* A dragged card must track the finger exactly — no transition in the way. */
+.deck.is-dragging .card {
+  transition: none;
 }
 
-@keyframes card-in {
-  from {
-    opacity: 0;
-    transform: translateY(18px) scale(0.94);
-  }
-}
+/* --- the card itself ------------------------------------------------------ */
 
 .card-inner {
   position: relative;
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
-  transition: transform var(--dur-4) var(--ease-inout);
+  -webkit-transform-style: preserve-3d;
+  transition: transform var(--dur-flip) var(--ease-flip);
 }
 
 .card[data-face="back"] .card-inner {
   transform: rotateY(180deg);
 }
 
+/* The shadow belongs to the card, not its faces: on a face it rotates away
+   with the flip and the light source swings 180 degrees mid-turn. */
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--radius);
+  box-shadow: 10px 10px 0 var(--shadow);
+  transition: box-shadow var(--dur-press) var(--ease-enter);
+}
+
+.card.is-pressed::after {
+  box-shadow: 4px 4px 0 var(--shadow);
+}
+
 .card-face {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: var(--s5);
-  border: var(--bw-3) solid var(--ink);
-  border-radius: var(--r-lg);
+  display: grid;
+  place-items: center;
+  padding: 26px;
+  border: var(--bw) solid var(--ink);
+  border-radius: var(--radius);
   background: var(--paper);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  overflow: hidden;
 }
 
 .card-back {
   transform: rotateY(180deg);
-  justify-content: center;
-  gap: var(--s3);
-  text-align: center;
-  /* Clipping an answer would put content out of reach; let it scroll instead. */
-  overflow-y: auto;
-  overscroll-behavior: contain;
 }
 
-.card-kicker {
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
-
-.shape-well {
-  flex: 1;
-  display: grid;
-  place-items: center;
-  width: 100%;
+/* Sized against BOTH axes: a percentage width alone leaves the shape tiny on a
+   narrow card and overflowing on a short, wide one. min-height:0 is required —
+   as a grid item the automatic minimum is the intrinsic height of the drawing,
+   and min-height beats max-height, so without it the cap does nothing. */
+.card-face svg {
+  width: min(78%, 300px);
   min-height: 0;
-  padding: var(--s4) 0;
-}
-
-.shape-well svg {
-  width: min(70%, 230px);
+  max-height: 100%;
   height: auto;
+  overflow: visible;
 }
 
 .shape-name {
-  font-size: var(--fs-2xl);
+  font-size: clamp(2.2rem, 11vw, 3.4rem);
   font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  text-align: center;
+  text-wrap: balance;
 }
 
-.fact-chips {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--s2);
-}
-
-.fact-chips li {
-  padding: var(--s1) var(--s3);
-  color: var(--on-tone);
-  border: var(--bw-1) solid var(--on-tone);
-  border-radius: 999px;
-  background: var(--tone, var(--t1));
-  box-shadow: var(--e1);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  font-weight: 700;
-}
-
-.shape-def {
-  font-size: var(--fs-md);
-  text-wrap: pretty;
-}
-
-.shape-example {
-  font-size: var(--fs-sm);
-  color: var(--ink-soft);
-}
-
-.shape-example b {
-  color: var(--ink);
-}
-
-/* swipe intent badges ----------------------------------------------------- */
-
-.swipe-badge {
-  position: absolute;
-  top: var(--s5);
-  z-index: 2;
-  padding: var(--s2) var(--s4);
-  color: var(--on-tone);
-  border: var(--bw-2) solid var(--on-tone);
-  border-radius: var(--r-sm);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0;
-  pointer-events: none;
-  box-shadow: var(--e1);
-}
-
-.swipe-badge[data-side="left"] {
-  left: var(--s5);
-  background: var(--bad);
-  transform: rotate(-8deg);
-}
-
-.swipe-badge[data-side="right"] {
-  right: var(--s5);
-  background: var(--good);
-  transform: rotate(8deg);
-}
-
-/* --- study controls ------------------------------------------------------- */
-
-.study-head {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-}
+/* --- controls ------------------------------------------------------------- */
 
 .controls {
   display: flex;
-  flex-direction: column;
-  gap: var(--s3);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  flex: none;
 }
 
-.keyhint {
-  display: none;
-  justify-content: center;
-  gap: var(--s4);
-  font-size: var(--fs-xs);
-  color: var(--ink-soft);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .keyhint {
-    display: flex;
-  }
-}
-
-kbd {
-  display: inline-block;
-  min-width: 22px;
-  padding: 1px var(--s1);
-  border: var(--bw-1) solid var(--ink-soft);
-  border-radius: var(--r-sm);
-  background: var(--paper);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  text-align: center;
-}
-
-/* --- quiz ----------------------------------------------------------------- */
-
-.quiz {
-  justify-content: center;
-  gap: var(--s4);
-}
-
-.quiz-prompt {
+.btn {
   display: grid;
   place-items: center;
-  gap: var(--s3);
-  padding: var(--s5);
-  border: var(--bw-3) solid var(--ink);
-  border-radius: var(--r-lg);
+  height: 62px;
+  flex: none;
+  width: 62px;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
   background: var(--paper);
-  box-shadow: var(--e4);
-  text-align: center;
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 5px 5px 0 var(--shadow);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+  transition:
+    transform var(--dur-press) var(--ease-enter),
+    box-shadow var(--dur-press) var(--ease-enter),
+    background-color 220ms var(--ease-enter);
 }
 
-.quiz-prompt svg {
-  width: min(45vw, 160px);
-  height: auto;
+.btn svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.quiz-prompt-word {
-  font-size: var(--fs-2xl);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-.quiz-options {
-  display: grid;
-  gap: var(--s3);
-}
-
-.quiz-options {
-  grid-template-columns: 1fr 1fr;
-}
-
-.option {
-  display: grid;
-  place-items: center;
-  gap: var(--s2);
-  min-height: 76px;
-  padding: var(--s3);
-  font-size: var(--fs-md);
-  font-weight: 700;
-}
-
-.option svg {
-  width: 68px;
-  height: 68px;
-}
-
-.option[data-result="correct"],
-.option[data-result="wrong"] {
+.btn-flip {
+  flex: 1;
+  width: auto;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  background: var(--t1);
   color: var(--on-tone);
   border-color: var(--on-tone);
 }
 
-.option[data-result="correct"] {
-  background: var(--good);
-  transform: none;
-  box-shadow: var(--e2);
-  animation: pop var(--dur-3) var(--ease-spring);
-}
-
-.option[data-result="wrong"] {
-  background: var(--bad);
-  animation: shake var(--dur-4) var(--ease-inout);
-}
-
-@keyframes pop {
-  50% {
-    transform: scale(1.06);
+/* Rest 5+0, hover 7-2, press 1+4 — the shadow's far edge never moves, so the
+   light source stays put and the press reads as physical. */
+@media (hover: hover) {
+  .btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 7px 7px 0 var(--shadow);
   }
 }
 
-@keyframes shake {
-  20% {
-    transform: translateX(-6px);
-  }
-  45% {
-    transform: translateX(5px);
-  }
-  70% {
-    transform: translateX(-3px);
-  }
+.btn:active,
+.btn.is-pressed {
+  transform: translate(4px, 4px);
+  box-shadow: 1px 1px 0 var(--shadow);
 }
 
-.quiz-feedback {
-  min-height: 28px;
-  text-align: center;
-  font-weight: 700;
+.btn:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 4px;
 }
 
-/* --- summary -------------------------------------------------------------- */
+/* --- position dots -------------------------------------------------------- */
 
-.summary {
-  justify-content: center;
-  text-align: center;
-  gap: var(--s5);
-}
-
-.tally {
+.dots {
   display: flex;
   justify-content: center;
-  gap: var(--s3);
   flex-wrap: wrap;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex: none;
 }
 
-.tally li {
-  display: grid;
-  gap: 2px;
-  min-width: 108px;
-  padding: var(--s3) var(--s4);
-  border: var(--bw-2) solid var(--ink);
-  border-radius: var(--r-md);
-  background: var(--paper);
-  box-shadow: var(--e2);
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
-
-.tally b {
-  font-size: var(--fs-2xl);
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-}
-
-.score-ring {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 216px;
-  height: 216px;
-  margin-inline: auto;
-  border: var(--bw-3) solid var(--ink);
+.dots li {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: conic-gradient(
-    var(--score-tone, var(--t1)) calc(var(--score, 0) * 1%),
-    var(--canvas) 0
-  );
-  box-shadow: var(--e4);
-  animation: pop var(--dur-4) var(--ease-spring);
+  background: var(--ink);
+  opacity: 0.22;
+  transition:
+    opacity 320ms var(--ease-enter),
+    transform 320ms var(--ease-settle);
 }
 
-.score-ring::after {
-  content: "";
-  position: absolute;
-  inset: 22px;
-  border: var(--bw-2) solid var(--ink);
-  border-radius: 50%;
-  background: var(--paper);
+.dots li[data-on] {
+  opacity: 1;
+  transform: scale(1.7);
 }
 
-.score-value,
-.score-label {
-  position: relative;
-  z-index: 1;
-  max-width: 60%;
-}
+/* --- short viewports ------------------------------------------------------ */
 
-.score-value {
-  font-size: var(--fs-2xl);
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.02em;
-}
-
-.score-label {
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.summary-title {
-  font-size: var(--fs-xl);
-  font-weight: 700;
-}
-
-.missed {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--s2);
-}
-
-.missed li {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  padding: var(--s1) var(--s3) var(--s1) var(--s1);
-  border: var(--bw-1) solid var(--ink);
-  border-radius: 999px;
-  background: var(--paper);
-  box-shadow: var(--e1);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-}
-
-.missed svg {
-  width: 26px;
-  height: 26px;
-}
-
-/* --- toast ---------------------------------------------------------------- */
-
-.toast {
-  position: fixed;
-  left: 50%;
-  top: max(var(--s2), env(safe-area-inset-top));
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  gap: var(--s3);
-  padding: var(--s3) var(--s4);
-  border: var(--bw-2) solid var(--ink);
-  border-radius: var(--r-md);
-  background: var(--paper);
-  box-shadow: var(--e3);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  transform: translate(-50%, -200%);
-  transition: transform var(--dur-3) var(--ease-spring);
-}
-
-.toast.is-open {
-  transform: translate(-50%, 0);
-}
-
-.toast button {
-  padding: var(--s1) var(--s3);
-  color: var(--on-tone);
-  border: var(--bw-1) solid var(--on-tone);
-  border-radius: var(--r-sm);
-  background: var(--t1);
-  font-weight: 700;
-  font-size: var(--fs-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-/* --- responsive ----------------------------------------------------------- */
-
-/* Short viewports (landscape phones). The card and its rating buttons have to
-   be visible together — a card you must scroll to answer is not a flashcard —
-   so the card takes whatever height is left over rather than asking for a
-   fixed amount and pushing the controls off the bottom. */
 @media (max-height: 620px) {
   .app {
-    gap: var(--s2);
+    gap: 14px;
+    padding-top: max(14px, env(safe-area-inset-top));
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
   }
 
-  .screen {
-    gap: var(--s3);
+  .btn {
+    height: 52px;
+    width: 52px;
   }
 
-  .card {
-    /* Let it go wide and short rather than insisting on portrait proportions. */
-    aspect-ratio: auto;
-    height: 100%;
-    min-height: 104px;
-  }
-
-  .card-face {
-    padding: var(--s3);
-  }
-
-  .shape-well svg {
-    width: min(34%, 120px);
-  }
-
-  .shape-name {
-    font-size: var(--fs-xl);
-  }
-
-  .home {
-    gap: var(--s4);
-  }
-
-  /* No room for the shortcut legend; the shortcuts still work. */
-  .keyhint {
-    display: none;
-  }
-
-  .app {
-    padding-bottom: max(var(--s3), env(safe-area-inset-bottom));
-  }
-
-  .wordmark {
-    font-size: var(--fs-2xl);
-  }
-
-  .deck-tile {
-    padding: var(--s4);
-  }
-
-  .deck-preview {
-    margin: var(--s3) 0;
-  }
-
-  .deck-preview svg {
-    width: 24px;
-    height: 24px;
-  }
-
-  .btn-lg {
-    min-height: 52px;
-    font-size: var(--fs-md);
-  }
-
-  .score-ring {
-    width: 150px;
-    height: 150px;
-  }
-
-  .score-ring::after {
-    inset: 18px;
-  }
-}
-
-/* Very short viewports (small phones in landscape, ~320px tall). Trim the
-   chrome rather than the card, and keep every target above the 24px minimum. */
-@media (max-height: 430px) {
-  .topbar {
-    min-height: 38px;
-  }
-
-  .icon-btn {
-    width: 38px;
-    height: 38px;
-  }
-
-  .btn,
-  .btn-lg {
-    min-height: 46px;
-  }
-
-  .meter {
-    height: 12px;
-  }
-
-  .card-kicker {
+  .dots {
     display: none;
   }
 }
 
-/* Landscape has width to spare and no height. Use the shape rather than just
-   shrinking everything: brand and deck on the left, the two actions beside
-   them, so home stops scrolling. */
-@media (max-height: 620px) and (min-width: 600px) {
-  .app {
-    max-width: 860px;
-  }
-
-  .home {
-    display: grid;
-    grid-template-columns: 1.15fr 1fr;
-    grid-template-areas:
-      "brand actions"
-      "deck actions";
-    align-content: center;
-    gap: var(--s4) var(--s5);
-  }
-
-  .home > div:first-child {
-    grid-area: brand;
-  }
-
-  #deck-panel {
-    grid-area: deck;
-  }
-
-  .home .controls {
-    grid-area: actions;
-    align-self: center;
-  }
-}
-
-@media (min-width: 900px) {
-  .app {
-    max-width: 640px;
-  }
-
-  .card {
-    max-width: 440px;
-  }
-}
-
-/* --- reduced motion ------------------------------------------------------- *
-   Not "animations off" — animations replaced. The card still changes, it just
-   cross-fades instead of rotating through 3D, which is the part that triggers
-   vestibular symptoms. Nothing becomes unreachable and no state is lost. */
+/* --- reduced motion -------------------------------------------------------
+   Not "motion off". The same durations and the same easing; what goes is the
+   travel, the rotation and the 3D — the parts that actually provoke symptoms.
+   Nothing here is instant, and no two faces are ever visible at once: the
+   outgoing face finishes before the incoming one starts. */
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  .card {
+    transition:
+      opacity 300ms var(--ease-enter),
+      transform 300ms var(--ease-enter);
   }
 
+  .card[data-pos="current"] {
+    transform: none;
+    opacity: 1;
+  }
+
+  .card[data-pos="next"],
+  .card[data-pos="behind"] {
+    transform: scale(0.97);
+    opacity: 0;
+  }
+
+  .card[data-pos="past"] {
+    transform: scale(0.97);
+    opacity: 0;
+    transition:
+      opacity 220ms var(--ease-exit),
+      transform 220ms var(--ease-exit);
+  }
+
+  /* The flip becomes a sequenced dissolve: out, then in. Never a 50/50 ghost. */
   .card-inner {
     transform: none !important;
     transform-style: flat;
@@ -1254,7 +464,8 @@ kbd {
 
   .card-face {
     backface-visibility: visible;
-    transition: opacity 140ms linear !important;
+    -webkit-backface-visibility: visible;
+    transition: opacity 200ms var(--ease-enter);
   }
 
   .card-back {
@@ -1264,33 +475,25 @@ kbd {
   .card[data-face="front"] .card-back,
   .card[data-face="back"] .card-front {
     opacity: 0;
-    pointer-events: none;
+    transition-delay: 0ms;
   }
 
   .card[data-face="front"] .card-front,
   .card[data-face="back"] .card-back {
     opacity: 1;
+    transition-delay: 180ms;
   }
 
-  .meter-fill {
-    transition: width 140ms linear !important;
-  }
-
-  .toast {
-    transition: transform 140ms linear !important;
+  .btn:active,
+  .btn.is-pressed {
+    transform: none;
+    box-shadow: 1px 1px 0 var(--shadow);
   }
 }
 
-/* --- forced colors -------------------------------------------------------- */
-
 @media (forced-colors: active) {
-  .press,
   .card-face,
-  .quiz-prompt {
+  .btn {
     border-color: CanvasText;
-  }
-
-  .meter-fill {
-    background: Highlight;
   }
 }
