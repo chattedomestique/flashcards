@@ -19,15 +19,13 @@
   var COMMIT_MAX = 48; // px — a wide card shouldn't demand a long haul
   var FLICK = 0.15; // px/ms
   var FLICK_MIN = 10; // px
-  var FACE_RESET_MS = 600; // after a move, once the old card is out of sight
+  var FACE_RESET_MS = 700; // after a move, once the old card is out of sight
 
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   var deck = document.getElementById("deck");
   var dots = document.getElementById("dots");
   var live = document.getElementById("live");
-  var flipBtn = document.querySelector("[data-flip]");
-  var flipLabel = document.querySelector("[data-flip-label]");
 
   var shapes = window.SHAPES || [];
   var cards = [];
@@ -148,20 +146,12 @@
       if (i === index) dot.setAttribute("data-on", "");
       else dot.removeAttribute("data-on");
     });
-
-    syncFlipButton();
   }
 
   function syncFaces(card) {
     var showingBack = card.dataset.face === "back";
     card.__front.inert = showingBack;
     card.__back.inert = !showingBack;
-  }
-
-  function syncFlipButton() {
-    var showingBack = current().dataset.face === "back";
-    flipBtn.setAttribute("aria-expanded", showingBack ? "true" : "false");
-    flipLabel.textContent = showingBack ? "Show shape" : "Show name";
   }
 
   function current() {
@@ -204,7 +194,6 @@
     var toBack = card.dataset.face === "front";
     card.dataset.face = toBack ? "back" : "front";
     syncFaces(card);
-    syncFlipButton();
     announce(
       toBack
         ? card.__shape.name
@@ -310,10 +299,6 @@
 
   /* -------------------------------------------------------------- controls */
 
-  function onClick(event) {
-    if (event.target.closest && event.target.closest("[data-flip]")) flip();
-  }
-
   function onKeyDown(event) {
     if (
       event.defaultPrevented ||
@@ -322,9 +307,6 @@
       event.altKey
     )
       return;
-    var onButton =
-      document.activeElement && document.activeElement.tagName === "BUTTON";
-
     switch (event.key) {
       case "ArrowRight":
         event.preventDefault();
@@ -336,7 +318,6 @@
         break;
       case " ":
       case "Enter":
-        if (onButton) return; // let the focused button act for itself
         event.preventDefault();
         flip();
         break;
@@ -390,7 +371,6 @@
     deck.addEventListener("pointermove", onPointerMove);
     deck.addEventListener("pointerup", endDrag);
     deck.addEventListener("pointercancel", endDrag);
-    document.addEventListener("click", onClick);
     document.addEventListener("keydown", onKeyDown);
     bindPress();
 

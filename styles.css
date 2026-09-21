@@ -37,14 +37,14 @@
   --radius: 26px;
 
   /* motion */
-  --dur-flip: 560ms;
+  --dur-flip: 640ms;
   --dur-move: 520ms;
   --dur-press: 130ms;
   --gap: 28px;
   --ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-exit: cubic-bezier(0.4, 0, 0.7, 0.2);
   --ease-settle: cubic-bezier(0.34, 1.35, 0.64, 1);
-  --ease-flip: cubic-bezier(0.62, 0.04, 0.3, 1);
+  --ease-flip: cubic-bezier(0.83, 0, 0.17, 1); /* easeInOutQuint */
 }
 
 /* Real springs where the engine has linear() — a touch of overshoot on arrival
@@ -62,19 +62,6 @@
       1.003 70%,
       0.994 80%,
       0.994 90%,
-      1
-    );
-    --ease-flip: linear(
-      0,
-      0.228 10%,
-      0.574 20%,
-      0.821 30%,
-      0.951 40%,
-      1.003 50%,
-      1.015 60%,
-      1.013 70%,
-      1.007 80%,
-      1.003 90%,
       1
     );
   }
@@ -171,7 +158,6 @@ h1 {
      bar down the edge of the screen. */
   overflow: clip;
   overflow-clip-margin: 12px;
-  perspective: 1600px;
 }
 
 .card {
@@ -196,6 +182,11 @@ h1 {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  /* The flip's perspective belongs HERE, on its direct parent. On .deck it
+     never reaches .card-inner — .card sits between them with its own transform
+     and a flat transform-style, which flattens the 3D away. The card then
+     squashes horizontally instead of turning, which is not a flip. */
+  perspective: 1400px;
 }
 
 .card:active {
@@ -291,77 +282,8 @@ h1 {
 
 /* --- controls ------------------------------------------------------------- */
 
-.controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  flex: none;
-}
-
-.btn {
-  display: grid;
-  place-items: center;
-  height: 62px;
-  flex: none;
-  width: 62px;
-  padding: 0;
-  font: inherit;
-  font-weight: 700;
-  color: var(--ink);
-  background: var(--paper);
-  border: 3px solid var(--ink);
-  border-radius: 18px;
-  box-shadow: 5px 5px 0 var(--shadow);
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-  touch-action: manipulation;
-  transition:
-    transform var(--dur-press) var(--ease-enter),
-    box-shadow var(--dur-press) var(--ease-enter),
-    background-color 220ms var(--ease-enter);
-}
-
-.btn svg {
-  width: 26px;
-  height: 26px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.btn-flip {
-  flex: 1;
-  width: 100%;
-  font-size: 1.05rem;
-  letter-spacing: 0.01em;
-  background: var(--t1);
-  color: var(--on-tone);
-  border-color: var(--on-tone);
-}
-
 /* Rest 5+0, hover 7-2, press 1+4 — the shadow's far edge never moves, so the
    light source stays put and the press reads as physical. */
-@media (hover: hover) {
-  .btn:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 7px 7px 0 var(--shadow);
-  }
-}
-
-.btn:active,
-.btn.is-pressed {
-  transform: translate(4px, 4px);
-  box-shadow: 1px 1px 0 var(--shadow);
-}
-
-.btn:focus-visible {
-  outline: 3px solid var(--ink);
-  outline-offset: 4px;
-}
 
 /* --- position dots -------------------------------------------------------- */
 
@@ -401,11 +323,6 @@ h1 {
     padding-bottom: max(14px, env(safe-area-inset-bottom));
   }
 
-  .btn {
-    height: 52px;
-    width: 52px;
-  }
-
   .dots {
     display: none;
   }
@@ -419,52 +336,19 @@ h1 {
 
 @media (prefers-reduced-motion: reduce) {
   /* The carousel still slides — a horizontal move is mild, and a cross-fade
-     here is what read as broken. What goes is the overshoot: the spring is
-     replaced by a plain decelerate so nothing bounces past its mark. */
+     here read as broken. What goes is the overshoot: a plain decelerate, so
+     nothing bounces past its mark.
+
+     The flip is deliberately left alone. It is the point of the app and was
+     asked for directly; degrading it to a dissolve is what made the card
+     appear to ghost rather than turn. */
   .card {
     transition: transform 380ms var(--ease-enter);
-  }
-
-  /* The flip has no non-3D equivalent, so it becomes a sequenced dissolve:
-     the outgoing face reaches zero before the incoming one starts, so the two
-     are never both on screen. */
-  .card-inner {
-    transform: none !important;
-    transform-style: flat;
-  }
-
-  .card-face {
-    backface-visibility: visible;
-    -webkit-backface-visibility: visible;
-    transition: opacity 200ms var(--ease-enter);
-  }
-
-  .card-back {
-    transform: none;
-  }
-
-  .card[data-face="front"] .card-back,
-  .card[data-face="back"] .card-front {
-    opacity: 0;
-    transition-delay: 0ms;
-  }
-
-  .card[data-face="front"] .card-front,
-  .card[data-face="back"] .card-back {
-    opacity: 1;
-    transition-delay: 180ms;
-  }
-
-  .btn:active,
-  .btn.is-pressed {
-    transform: none;
-    box-shadow: 1px 1px 0 var(--shadow);
   }
 }
 
 @media (forced-colors: active) {
-  .card-face,
-  .btn {
+  .card-face {
     border-color: CanvasText;
   }
 }
