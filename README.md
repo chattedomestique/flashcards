@@ -14,13 +14,15 @@ app.js       deck, flip, gestures
 
 ## Controls
 
-|                   | Pointer      | Keyboard                  |
-| ----------------- | ------------ | ------------------------- |
-| See the name      | Tap the card | <kbd>Space</kbd>          |
-| Next / previous   | Swipe        | <kbd>←</kbd> <kbd>→</kbd> |
-| Back to the first | —            | <kbd>Home</kbd>           |
+Touch only, and there is nothing on screen but the card.
+
+|                 |              |
+| --------------- | ------------ |
+| See the name    | Tap the card |
+| Next / previous | Swipe        |
 
 The carousel wraps in both directions, so there is no first or last shape.
+<kbd>←</kbd> <kbd>→</kbd> and <kbd>Space</kbd> also work if a keyboard is attached.
 
 ## Two rules the motion depends on
 
@@ -38,11 +40,28 @@ switched off before they move.
 
 **Reduced motion means gentler, not instant.** Setting every duration to `0.01ms`
 — the usual snippet — turns an app into jump cuts for exactly the people who
-asked for calm, and that is what it did here. Under `prefers-reduced-motion` the
-carousel still slides, because a horizontal move is mild and a cross-fade is
-what read as broken; what goes is the overshoot. The flip has no non-3D
-equivalent, so it becomes a sequenced dissolve — the outgoing face reaching zero
-before the incoming one starts, so the two are never both on screen at once.
+asked for calm, and that is what it did here. The carousel now slides under
+`prefers-reduced-motion` too, because a horizontal move is mild and a
+cross-fade is what read as broken; what goes is the overshoot.
+
+The flip is deliberately left alone under that setting. It is the point of the
+app, and a dissolve made the card appear to ghost rather than turn.
+
+## The flip
+
+Three things have to be true or it is not a flip:
+
+- **`perspective` belongs on `.card`**, the flip's direct parent — not on
+  `.deck`. `.card` sits between them with its own transform and a flat
+  `transform-style`, which flattens the 3D away: the card then squashes
+  horizontally instead of turning. Measured at 45°, a face is 484px tall
+  flattened and 524px tall with perspective, because the near edge is
+  magnified.
+- **`backface-visibility: hidden`** on both faces hands over at exactly 90°.
+  Verified by pixel count: the shape side is still painting at 89° and gone at
+  91°, and the two are never both on screen.
+- **The easing is `cubic-bezier(0.83, 0, 0.17, 1)`** — a pronounced ease in and
+  out. A spring is wrong here: the overshoot rotates past 180° and comes back.
 
 ## Adding a shape
 
