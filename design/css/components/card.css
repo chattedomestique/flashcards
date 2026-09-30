@@ -1,0 +1,617 @@
+/* ==========================================================================
+   Card
+   --------------------------------------------------------------------------
+   A card holds one idea. It is a frame with slots; what goes in a slot is
+   another element's business (buttons, tags and meters come later, and the
+   .card__ctl / .card__action slots are where they will land).
+
+   House rules for this file
+   · Reads ROLES only (--paper, --ink, --tone-N ...). No colour literals.
+   · One shape gesture per card: round it OR notch it. Never both.
+   · A hard shadow means "you can press this". Nothing else gets one.
+   · Never put cqi on .card itself: its container is its PARENT. Padding and
+     sizes that use cqi live on the parts, where the container is the card.
+   · States change instantly. Transitions belong to gate 4.
+   ========================================================================== */
+
+@property --lift {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --fill {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.card {
+  /* component roles: the only things a variant, tone or theme overrides */
+  --card-bg: var(--tone-bg, var(--paper));
+  --card-ink: var(--tone-ink, var(--ink));
+  --card-line: var(--line);
+  --card-ink-soft: color-mix(in srgb, var(--card-ink) 72%, var(--card-bg));
+  --card-bar-bg: var(--ink);
+  --card-bar-ink: var(--paper);
+  --card-radius: var(--radius-card);
+  --card-pad: clamp(1rem, 5cqi, 1.5rem);
+  --card-gap: var(--space-2);
+
+  /* interaction, as two numbers. --lift is geometry (0 flat, 1 raised);
+     --fill is colour (0 outline, 1 filled). Every state just sets them. */
+  --lift: 0;
+  --fill: 0;
+  --shadow-lift: calc(var(--lift) * var(--space-1)) calc(var(--lift) * var(--space-1)) 0 0 var(--card-line);
+  --shadow-select: 0 0 0 0 transparent;
+  --shadow-stack: 0 0 0 0 transparent;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  container: card / inline-size;
+  color: var(--card-ink);
+  background: var(--card-bg);
+  border: var(--bw) solid var(--card-line);
+  border-radius: var(--card-radius);
+  overflow: clip;
+  box-shadow: var(--shadow-select), var(--shadow-lift), var(--shadow-stack);
+}
+
+/* the inverted tone swaps the bar too, or it would vanish into the card */
+.card[data-tone="ink"] {
+  --card-bar-bg: var(--paper);
+  --card-bar-ink: var(--ink);
+}
+
+/* --- focus inside a card -----------------------------------------------------
+   The card clips, so a ring has to fit inside it, and it has to contrast with
+   whatever it lands on: the bar is ink, and so is an inverted card. */
+
+.card :focus-visible {
+  outline-offset: var(--ring-offset-in);
+}
+
+.card__bar :focus-visible {
+  outline-color: var(--card-bar-ink);
+  outline-offset: calc(var(--ring) * -1);
+}
+
+.card[data-tone="ink"] :focus-visible {
+  outline-color: var(--card-ink);
+}
+
+/* --- parts ----------------------------------------------------------------- */
+
+/* bar: the frame, thickened, with a label and one control. */
+.card__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-block-size: var(--hit);
+  padding-inline-start: var(--card-pad);
+  color: var(--card-bar-ink);
+  background: var(--card-bar-bg);
+}
+
+.card__label {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+/* the control slot: a 44px hit area around a 20px box. */
+.card__ctl {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: var(--hit);
+  block-size: var(--hit);
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.card__ctl::before,
+.card__ctl > .ic {
+  grid-area: 1 / 1;
+}
+
+.card__ctl::before {
+  content: "";
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  border: var(--bw) solid currentColor;
+  border-radius: var(--radius-ctl);
+}
+
+.card__ctl > .ic {
+  --ic-size: 0.75rem;
+}
+
+/* media: full bleed, closed off from the body by a frame-weight line. */
+.card__media {
+  aspect-ratio: var(--ratio, var(--ratio-media));
+  background-color: var(--tone-bg, var(--tone-1));
+  border-block-end: var(--bw) solid var(--card-ink);
+  overflow: clip;
+}
+
+.card__media > :is(img, video) {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.card__head,
+.card__body {
+  padding: var(--card-pad);
+}
+
+.card__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.card__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--card-gap);
+}
+
+.card__eyebrow {
+  font: var(--type-meta);
+  color: var(--card-ink-soft);
+}
+
+.card__title {
+  font: var(--type-title);
+  font-size: clamp(1.375rem, 8cqi, 2rem);
+  letter-spacing: var(--ls-title);
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+.card__text {
+  max-inline-size: 40ch;
+  font: var(--type-body);
+  text-wrap: pretty;
+}
+
+.card__meta {
+  font: var(--type-meta);
+  font-variant-numeric: tabular-nums;
+  color: var(--card-ink-soft);
+}
+
+.card__figure {
+  font: var(--type-figure);
+  font-size: clamp(3rem, 27cqi, 6.5rem);
+  letter-spacing: var(--ls-figure);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.card__figure > small {
+  margin-inline-start: 0.08em;
+  font-size: 0.42em;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--card-ink-soft);
+}
+
+/* foot: one 1px rule, then the small print. */
+.card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-block-size: var(--hit);
+  padding: var(--space-2) var(--card-pad);
+  margin-block-start: auto;
+  font: var(--type-meta);
+  border-block-start: var(--bw-thin) solid var(--card-ink);
+}
+
+.card__foot :is(a, button) {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.5rem;
+}
+
+/* layout helpers inside a body */
+.card__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.card__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* a list of links, ruled. Used in panels. */
+.card__list > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-block-size: var(--hit);
+  padding-inline: var(--card-pad);
+  font: var(--type-body);
+  font-variant-numeric: tabular-nums;
+  border-block-start: var(--bw-thin) solid var(--card-ink);
+}
+
+.card__list > li:first-child {
+  border-block-start: 0;
+}
+
+.card__list a {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-block-size: var(--hit);
+  text-decoration: none;
+}
+
+.card__list a:focus-visible {
+  outline-offset: calc(var(--ring) * -1);
+}
+
+/* a square card, for grids of stats and decks: first part up top, last at the bottom */
+.card--square {
+  aspect-ratio: 1 / 1;
+}
+
+.card--square .card__body {
+  justify-content: space-between;
+}
+
+/* action: the round slot. Decorative on a link card, a real button in a notch. */
+.card__action {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  inline-size: var(--hit);
+  block-size: var(--hit);
+  padding: 0;
+  color: color-mix(in srgb, var(--on-accent) calc(var(--fill) * 100%), var(--card-ink));
+  background: color-mix(in srgb, var(--accent) calc(var(--fill) * 100%), var(--card-bg));
+  border: var(--bw) solid var(--card-ink);
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.card__action:is(:hover, .is-hover) {
+  --fill: 1;
+}
+
+/* tile: the square slot at the head of a row. */
+.card__tile {
+  inline-size: var(--hit);
+  block-size: var(--hit);
+  flex: none;
+  border: var(--bw) solid var(--card-ink);
+  border-radius: var(--radius-tile);
+  background-color: var(--tone-bg, var(--tone-1));
+  overflow: clip;
+}
+
+/* --- variant: row ----------------------------------------------------------
+   Icon tile, title and a short meta line, value on the right. Below 18rem the
+   value drops under the title. The card can't re-template itself from its
+   own container, but its children can move between grid cells. */
+
+.card--row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
+  padding: var(--space-3);
+}
+
+.card__main {
+  min-inline-size: 0;
+}
+
+.card--row .card__title {
+  font-size: var(--text-lg);
+}
+
+.card--row .card__trail {
+  text-align: end;
+  font: var(--type-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+@container card (max-width: 18rem) {
+  .card--row .card__trail {
+    grid-column: 2;
+    grid-row: 2;
+    text-align: start;
+  }
+
+  .card--row .card__tile {
+    grid-row: span 2;
+  }
+}
+
+/* --- variant: link ---------------------------------------------------------
+   The whole card is one link. The anchor lives in the title and its ::after
+   is stretched over the card, so there is exactly one tab stop, one name, and
+   the hit area is the whole thing. Anything else clickable inside must sit
+   above it (position: relative; z-index: 1). */
+
+.card--link {
+  cursor: pointer;
+  /* let the stretched link's ::after reach over the 2px border, or a click on
+     the very edge of the card does nothing (Safari ignores this: 2px dead band) */
+  overflow-clip-margin: border-box;
+  transform: translate(
+    calc(var(--lift) * var(--space-1) / -2),
+    calc(var(--lift) * var(--space-1) / -2)
+  );
+}
+
+.card--link .card__body {
+  justify-content: space-between;
+  min-block-size: 11rem;
+}
+
+.card__link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: var(--bw);
+  text-underline-offset: 0.18em;
+  text-decoration-color: color-mix(in srgb, currentColor calc(var(--fill) * 100%), transparent);
+}
+
+.card__link::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--bw) * -1);
+}
+
+/* the card wears the focus ring, not the anchor inside it */
+@supports selector(:has(*)) {
+  .card__link:focus-visible {
+    outline: 0;
+  }
+}
+
+/* --- variant: ghost --------------------------------------------------------
+   An empty slot that asks to be filled. Dashed = nothing here yet. The card
+   itself is the anchor or button. */
+
+.card--ghost {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  color: var(--card-ink-soft);
+  background: transparent;
+  border-style: dashed;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.card--ghost .card__title {
+  font-size: var(--text-lg);
+}
+
+/* --- variant: stack --------------------------------------------------------
+   Two sheets behind the card, drawn with box-shadow so the modifier needs no
+   wrapper and follows the radius for free. The sheets spill out of the box:
+   the margin reserves their room. */
+
+.card--stack {
+  --stack: 0.375rem;
+  --shadow-stack:
+    var(--stack) var(--stack) 0 0 var(--card-bg),
+    var(--stack) var(--stack) 0 var(--bw) var(--card-line),
+    calc(var(--stack) * 2) calc(var(--stack) * 2) 0 0 var(--card-bg),
+    calc(var(--stack) * 2) calc(var(--stack) * 2) 0 var(--bw) var(--card-line);
+  margin-inline-end: calc(var(--stack) * 2 + var(--bw));
+  margin-block-end: calc(var(--stack) * 2 + var(--bw));
+}
+
+/* --- variant: notch --------------------------------------------------------
+   A corner cut out of the frame, with a round control sitting in the cut. The
+   silhouette is painted, not clipped: four flat layers (two ink, two inset
+   fill) so the line turns the corner at exactly --bw and no wrapper is needed.
+   Square only: the cut IS the shape gesture, so --card-radius is ignored.
+   Not a whole-card link: the control in the notch is the interactive part. */
+
+.card--notch {
+  --notch-w: 4.5rem;
+  --notch-h: 4.5rem;
+  border-color: transparent;
+  border-radius: 0;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-origin: border-box;
+  background-image:
+    linear-gradient(var(--card-bg), var(--card-bg)),
+    linear-gradient(var(--card-bg), var(--card-bg)),
+    linear-gradient(var(--card-line), var(--card-line)),
+    linear-gradient(var(--card-line), var(--card-line));
+  background-position:
+    var(--bw) var(--bw),
+    var(--bw) calc(var(--notch-h) + var(--bw)),
+    0 0,
+    0 var(--notch-h);
+  background-size:
+    calc(100% - var(--notch-w) - var(--bw) * 2) calc(100% - var(--bw) * 2),
+    calc(100% - var(--bw) * 2) calc(100% - var(--notch-h) - var(--bw) * 2),
+    calc(100% - var(--notch-w)) 100%,
+    100% calc(100% - var(--notch-h));
+  box-shadow: none;
+  overflow: visible;
+}
+
+.card--notch > .card__head {
+  min-block-size: calc(var(--notch-h) - var(--bw));
+  padding-inline-end: calc(var(--notch-w) + var(--space-2));
+}
+
+/* the control sits centred in the cut, out on the page */
+.card--notch > .card__action {
+  --card-bg: var(--paper);
+  --card-ink: var(--ink);
+  position: absolute;
+  inset-block-start: calc(var(--notch-h) / 2 - var(--hit) / 2 - var(--bw));
+  inset-inline-end: calc(var(--notch-w) / 2 - var(--hit) / 2 - var(--bw));
+}
+
+/* --- variant: study --------------------------------------------------------
+   The flashcard itself: 5:7, one subject, one hint. The flip is motion, so it
+   is designed at gate 4; the faces here are static. */
+
+.card--study {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  aspect-ratio: var(--ratio-study);
+  max-inline-size: 22rem;
+}
+
+.card__stage {
+  display: grid;
+  place-items: center;
+  min-block-size: 0;
+  padding: var(--card-pad);
+}
+
+.card--study .card__foot {
+  justify-content: center;
+  border-block-start: 0;
+}
+
+.card__answer {
+  font: var(--type-title);
+  font-size: clamp(2.25rem, 17cqi, 3.75rem);
+  font-weight: 700;
+  letter-spacing: var(--ls-title);
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* --- states ----------------------------------------------------------------
+   .is-* classes force a state for documentation and tests. They are not an
+   API; real states come from :hover, :focus-visible, :active and aria-*. */
+
+@media (hover: hover) {
+  :is(.card--link, .card--ghost):hover {
+    --lift: 1;
+    --fill: 1;
+    z-index: 1;
+  }
+}
+
+.card--link:is(.is-hover, .is-focus, :has(.card__link:focus-visible)) {
+  --lift: 1;
+  --fill: 1;
+  z-index: 1;
+}
+
+.card--link:is(.is-focus, :has(.card__link:focus-visible)),
+.card--ghost.is-focus {
+  outline: var(--ring) solid var(--focus);
+  outline-offset: var(--ring-offset);
+}
+
+.card--ghost:is(.is-hover, :focus-visible, .is-focus) {
+  --fill: 1;
+}
+
+.card--ghost:is(:hover, .is-hover, :focus-visible, .is-focus) {
+  color: var(--card-ink);
+  background: var(--card-bg);
+  border-style: solid;
+}
+
+/* pressed: back onto the surface, colour stays. After hover so it wins. */
+.card--link:is(:active, .is-active) {
+  --lift: 0;
+  --fill: 1;
+}
+
+/* selected: the frame doubles. A ring, not a wider border, so nothing shifts. */
+.card:is([aria-selected="true"], [aria-current="true"], .is-selected) {
+  --shadow-select: 0 0 0 var(--bw) var(--card-line);
+  z-index: 1;
+}
+
+/* disabled: dashed, muted, inert. The hatch is the wireframe kit's job. */
+.card:is([aria-disabled="true"], .is-disabled) {
+  --card-line: var(--ink-faint);
+  color: var(--ink-faint);
+  border-style: dashed;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.card:is([aria-disabled="true"], .is-disabled) :is(.card__eyebrow, .card__meta, .card__text, .card__title) {
+  color: inherit;
+}
+
+/* --- card-grid ---------------------------------------------------------------
+   Loose by default. --tiled shares borders instead of leaving a gap: negative
+   start margins overlap each card's frame onto its neighbour's, so two frames
+   read as one 2px line and a short last row still closes cleanly. */
+
+.card-grid {
+  --card-min: 16rem;
+  display: grid;
+  gap: var(--gutter);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--card-min)), 1fr));
+  align-items: stretch;
+}
+
+.card-grid--tiled {
+  gap: 0;
+  padding-block-start: var(--bw);
+  padding-inline-start: var(--bw);
+}
+
+.card-grid--tiled > .card {
+  --card-radius: 0;
+  margin-block-start: calc(var(--bw) * -1);
+  margin-inline-start: calc(var(--bw) * -1);
+}
+
+/* --- forced colours ----------------------------------------------------------
+   Shadows and fills disappear in forced-colors mode, so every state that
+   leaned on them gets a line instead. */
+
+@media (forced-colors: active) {
+  .card {
+    border-color: CanvasText;
+  }
+
+  .card--link:is(:hover, .is-hover, .is-focus, :has(.card__link:focus-visible)) {
+    outline: var(--bw-heavy) solid Highlight;
+    outline-offset: 0;
+  }
+
+  .card:is([aria-selected="true"], [aria-current="true"], .is-selected) {
+    border-width: var(--bw-heavy);
+  }
+
+  .card--notch {
+    border-color: CanvasText;
+    border-radius: 0;
+    background-image: none;
+  }
+}

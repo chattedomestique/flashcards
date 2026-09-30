@@ -1,0 +1,56 @@
+/* ==========================================================================
+   Colour, wireframe edition — gates 1 and 2.
+
+   Greys only. Structure has to work before colour is allowed to help it.
+
+   The bottom half is the contract: ROLES. Components read roles and nothing
+   else. Gate 3 replaces this whole file with color.css, which defines the
+   same role names with real values, and no component is touched.
+
+   Six tone slots stand in for the palette. In colour they become six hues;
+   here they are six greys, so you can see where colour will go.
+   ========================================================================== */
+
+:root {
+  /* --- primitives: the only hex values in the system ----------------------- */
+  --grey-0: #ffffff;
+  --grey-1: #f4f4f4;
+  --grey-2: #ebebeb;
+  --grey-3: #dfdfdf;
+  --grey-4: #d3d3d3;
+  --grey-5: #c7c7c7;
+  --grey-6: #bbbbbb;
+  --grey-7: #afafaf;
+  --grey-8: #8a8a8a;
+  --grey-9: #505050;
+  --grey-10: #141414;
+
+  /* --- roles -------------------------------------------------------------- */
+  --canvas: var(--grey-1); /* the page behind everything */
+  --paper: var(--grey-0); /* a card's default fill */
+  --ink: var(--grey-10); /* text and frames */
+  --ink-soft: var(--grey-9); /* secondary text on canvas or paper */
+  --ink-faint: var(--grey-8); /* disabled, placeholder lines */
+  --line: var(--ink); /* frames */
+  --line-soft: var(--grey-8); /* decoration that must stay quiet */
+  --focus: var(--ink);
+  --accent: var(--ink); /* the one "press this" colour; ink until gate 3 */
+  --on-accent: var(--paper);
+
+  /* --- tone slots: what a card, tile or bar can be filled with ------------- */
+  --tone-1: var(--grey-2);
+  --tone-2: var(--grey-3);
+  --tone-3: var(--grey-4);
+  --tone-4: var(--grey-5);
+  --tone-5: var(--grey-6);
+  --tone-6: var(--grey-7);
+
+  /* text that sits on each tone. In colour the saturated ones may flip to
+     paper; nothing else has to know. */
+  --on-tone-1: var(--ink);
+  --on-tone-2: var(--ink);
+  --on-tone-3: var(--ink);
+  --on-tone-4: var(--ink);
+  --on-tone-5: var(--ink);
+  --on-tone-6: var(--ink);
+}

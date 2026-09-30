@@ -1,0 +1,167 @@
+/* ==========================================================================
+   Base — reset, element defaults, type styles, the [data-tone] switch.
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  min-block-size: 100dvh;
+  font: var(--type-body);
+  color: var(--ink);
+  background: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
+
+/* Lists are reset for layout. Put role="list" on them so Safari keeps the
+   list semantics that `list-style: none` would otherwise drop. */
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-inline-size: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: var(--ring) solid var(--focus);
+  outline-offset: var(--ring-offset);
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- type styles ----------------------------------------------------------
+   Uppercase is structure: display, labels, index numbers. Content is
+   sentence case. */
+
+.t-display {
+  font: var(--type-display);
+  letter-spacing: var(--ls-display);
+  text-transform: uppercase;
+}
+
+.t-title {
+  font: var(--type-title);
+  letter-spacing: var(--ls-title);
+  text-wrap: balance;
+}
+
+.t-label {
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.t-body {
+  font: var(--type-body);
+  text-wrap: pretty;
+}
+
+.t-meta {
+  font: var(--type-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.t-figure {
+  font: var(--type-figure);
+  letter-spacing: var(--ls-figure);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* --- tone ------------------------------------------------------------------
+   [data-tone] on any element exposes --tone-bg / --tone-ink to it (and only
+   it: both are registered non-inheriting). A component decides what to do
+   with them. "ink" is the inverted tone. */
+
+[data-tone="1"] {
+  --tone-bg: var(--tone-1);
+  --tone-ink: var(--on-tone-1);
+}
+
+[data-tone="2"] {
+  --tone-bg: var(--tone-2);
+  --tone-ink: var(--on-tone-2);
+}
+
+[data-tone="3"] {
+  --tone-bg: var(--tone-3);
+  --tone-ink: var(--on-tone-3);
+}
+
+[data-tone="4"] {
+  --tone-bg: var(--tone-4);
+  --tone-ink: var(--on-tone-4);
+}
+
+[data-tone="5"] {
+  --tone-bg: var(--tone-5);
+  --tone-ink: var(--on-tone-5);
+}
+
+[data-tone="6"] {
+  --tone-bg: var(--tone-6);
+  --tone-ink: var(--on-tone-6);
+}
+
+[data-tone="ink"] {
+  --tone-bg: var(--ink);
+  --tone-ink: var(--paper);
+}

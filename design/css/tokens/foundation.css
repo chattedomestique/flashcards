@@ -1,0 +1,105 @@
+/* ==========================================================================
+   Foundation tokens — everything except colour.
+
+   Sizes are rem so they follow the reader's text size. Line weights are px
+   on purpose: a 2px rule should stay 2px.
+   ========================================================================== */
+
+:root {
+  /* --- type ---------------------------------------------------------------
+     One family, three widths. Archivo's width axis does the work a second
+     typeface usually does: expanded for posters, normal for reading,
+     condensed for labels. */
+  --font-sans: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace; /* docs + code only */
+
+  --text-xs: 0.8125rem; /* 13 */
+  --text-sm: 0.875rem; /* 14 */
+  --text-md: 1rem; /* 16 */
+  --text-lg: 1.25rem; /* 20 */
+  --text-xl: clamp(1.5rem, 1.3rem + 0.9vw, 2rem); /* 24 -> 32 */
+  --text-2xl: clamp(2rem, 1.5rem + 2.2vw, 3.25rem); /* 32 -> 52 */
+  --text-3xl: clamp(3rem, 1.6rem + 5.6vw, 6.5rem); /* 48 -> 104 */
+  --text-4xl: clamp(4.25rem, 1rem + 15vw, 15rem); /* 68 -> 240, poster */
+
+  --lh-none: 0.85;
+  --lh-tight: 1.1;
+  --lh-snug: 1.3;
+  --lh-body: 1.5;
+
+  --ls-display: -0.035em;
+  --ls-title: -0.015em;
+  --ls-figure: -0.03em;
+  --ls-label: 0.08em;
+
+  /* Whole text styles as `font` shorthands. `expanded` / `condensed` are the
+     keyword forms of font-stretch: 125% / 75%, both inside Archivo's range. */
+  --type-display: 900 expanded var(--text-4xl) / var(--lh-none) var(--font-sans);
+  --type-title: 500 var(--text-xl) / var(--lh-tight) var(--font-sans);
+  --type-label: 700 condensed var(--text-xs) / 1 var(--font-sans);
+  --type-body: 400 var(--text-md) / var(--lh-body) var(--font-sans);
+  --type-meta: 400 var(--text-sm) / var(--lh-snug) var(--font-sans);
+  --type-figure: 600 semi-expanded var(--text-3xl) / var(--lh-none) var(--font-sans);
+
+  /* --- space: 4px grid ---------------------------------------------------- */
+  --space-0: 0;
+  --space-1: 0.25rem; /* 4 */
+  --space-2: 0.5rem; /* 8 */
+  --space-3: 0.75rem; /* 12 */
+  --space-4: 1rem; /* 16 */
+  --space-5: 1.5rem; /* 24 */
+  --space-6: 2rem; /* 32 */
+  --space-7: 3rem; /* 48 */
+  --space-8: 4rem; /* 64 */
+  --space-9: 6rem; /* 96 */
+  --gutter: clamp(1rem, 0.6rem + 1.6vw, 1.75rem);
+  --measure: 62ch;
+
+  /* --- line: two weights and one emphasis ---------------------------------
+     2px frames what you can press or that contains. 1px only divides. */
+  --bw: 2px;
+  --bw-thin: 1px;
+  --bw-heavy: 4px;
+
+  /* --- shape ---------------------------------------------------------------
+     Circles and pills are always round. Everything else follows these three
+     roles, which are the only radii a component may read. The decision is
+     open (square or soft): change the three lines, nothing else moves. */
+  --radius-1: 0.375rem; /* 6  — controls */
+  --radius-2: 0.75rem; /* 12 — tiles, media */
+  --radius-3: 1.5rem; /* 24 — cards */
+  --radius-pill: 999px;
+
+  --radius-card: 0;
+  --radius-tile: 0;
+  --radius-ctl: 0;
+
+  /* --- hit targets and focus ---------------------------------------------- */
+  --hit: 2.75rem; /* 44px. The visible thing may be smaller; the target is not. */
+  --ring: 3px;
+  --ring-offset: 3px;
+  --ring-offset-in: 2px; /* inside a card, which clips: the ring has to fit */
+
+  /* --- ratios --------------------------------------------------------------- */
+  --ratio-media: 4 / 3;
+  --ratio-study: 5 / 7; /* the flashcard: same as the app */
+
+  /* --- motion (gate 4: declared, not yet used — states change instantly) ---- */
+  --dur-press: 130ms;
+  --dur-hover: 200ms;
+  --dur-move: 520ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-flip: cubic-bezier(0.83, 0, 0.17, 1);
+}
+
+/* [data-tone] sets these two for whatever it is on. They must not inherit, or
+   a toned card would paint every toned-less child the same colour. */
+@property --tone-bg {
+  syntax: "*";
+  inherits: false;
+}
+
+@property --tone-ink {
+  syntax: "*";
+  inherits: false;
+}

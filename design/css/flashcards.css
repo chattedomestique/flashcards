@@ -1,0 +1,25 @@
+/* ==========================================================================
+   flashcards.css — the one file an app links to.
+
+   The layer order below IS the architecture. Later layers win, so nothing
+   ever needs a specificity fight to override something beneath it.
+
+     tokens      values and roles. No selectors except :root and [data-tone].
+     base        reset, element defaults, type styles (.t-*).
+     components  one file per element. Reads roles only, never a raw colour.
+     wire        wireframe placeholders (.wf-*). Disposable: each one is
+                 deleted when the real element ships.
+     sheet       the style-sheet page's own chrome. Not shipped to the app.
+
+   Gate 3 (colour) swaps ONE line: color.wire.css -> color.css.
+   ========================================================================== */
+
+@layer tokens, base, components, wire, sheet;
+
+@import url("fonts.css");
+@import url("tokens/foundation.css") layer(tokens);
+@import url("tokens/color.wire.css") layer(tokens);
+@import url("base.css") layer(base);
+@import url("icons.css") layer(base);
+@import url("components/card.css") layer(components);
+@import url("wire.css") layer(wire);
