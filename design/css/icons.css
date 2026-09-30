@@ -1,0 +1,61 @@
+/* ==========================================================================
+   Icons, v0 — five glyphs, enough for cards.
+
+   Drawn on a 24 grid with a 2px square-cap stroke: the same weight as the
+   frame, so an icon reads as part of the line work and not as a sticker.
+   They are masks, so they take currentColor and never need an <img>.
+
+     <span class="ic ic--arrow" aria-hidden="true"></span>
+
+   Decorative by default. If an icon is the only content of a control, the
+   control gets the aria-label, not the icon.
+   ========================================================================== */
+
+:root {
+  --icon-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='square'%3E%3Cpath d='M7 17L17 7M8 7h9v9'/%3E%3C/svg%3E");
+  --icon-plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='square'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
+  --icon-minus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='square'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
+  --icon-close: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='square'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E");
+  --icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='square'%3E%3Cpath d='M5 12.5l5 5L19 7.5'/%3E%3C/svg%3E");
+}
+
+.ic {
+  display: inline-block;
+  flex: none;
+  inline-size: var(--ic-size, 1.25rem);
+  block-size: var(--ic-size, 1.25rem);
+  background: currentColor;
+  mask: var(--ic) center / contain no-repeat;
+}
+
+.ic--arrow {
+  --ic: var(--icon-arrow);
+}
+
+.ic--plus {
+  --ic: var(--icon-plus);
+}
+
+.ic--minus {
+  --ic: var(--icon-minus);
+}
+
+.ic--close {
+  --ic: var(--icon-close);
+}
+
+.ic--check {
+  --ic: var(--icon-check);
+}
+
+/* Forced-colours mode overrides backgrounds, and an icon here IS a background,
+   so without this every glyph would vanish. Opting out is not enough on its
+   own: an opted-out element inherits the parent's AUTHOR colour, not the forced
+   one, so a white glyph in a "filled" state would paint white on white. A system
+   colour is the only thing that's right in every state. */
+@media (forced-colors: active) {
+  .ic {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+}

@@ -1,0 +1,110 @@
+/* ==========================================================================
+   Wireframe kit — placeholders for things that don't exist yet.
+
+   Every .wf-* class is deleted the day its real element ships. Nothing in
+   components/ may depend on this file: a card must still be a card without it.
+
+   How to read a wireframe
+     box with an X      an image or illustration goes here
+     flat grey          a tone slot (the number says which)
+     black fill         the inverted tone
+     dashed outline     empty, or unavailable
+     hatch              disabled
+   ========================================================================== */
+
+/* image / illustration slot */
+.wf-media {
+  position: relative;
+  display: grid;
+  place-items: center;
+  background-image:
+    linear-gradient(
+      to top right,
+      transparent calc(50% - 0.5px),
+      var(--line-soft) calc(50% - 0.5px) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    ),
+    linear-gradient(
+      to bottom right,
+      transparent calc(50% - 0.5px),
+      var(--line-soft) calc(50% - 0.5px) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    );
+}
+
+.wf-tag {
+  padding: 0.125rem 0.5rem;
+  font: var(--type-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--bw-thin) solid var(--ink);
+}
+
+/* an illustration: the app's own shapes, drawn from decks.js paths */
+.wf-shape {
+  inline-size: min(72%, 13rem);
+  aspect-ratio: 1;
+  overflow: visible;
+}
+
+.wf-shape path {
+  fill: var(--tone-bg, var(--tone-3));
+  stroke: var(--card-ink, var(--ink));
+  stroke-width: 3.5;
+  stroke-linejoin: round;
+}
+
+/* progress / meter */
+.wf-meter {
+  --value: 50%;
+  position: relative;
+  block-size: 0.875rem;
+  overflow: clip;
+  background: var(--card-bg, var(--paper));
+  border: var(--bw) solid var(--card-ink, var(--ink));
+  border-radius: var(--radius-pill);
+}
+
+.wf-meter::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  inline-size: var(--value);
+  background: var(--card-ink, var(--ink));
+}
+
+/* forced colours drop backgrounds, and the meter's fill is one */
+@media (forced-colors: active) {
+  .wf-meter {
+    forced-color-adjust: none;
+    background: Canvas;
+    border-color: CanvasText;
+  }
+
+  .wf-meter::before {
+    background: CanvasText;
+  }
+}
+
+/* status tag */
+.wf-pill {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.75rem;
+  padding-inline: var(--space-3);
+  font: var(--type-meta);
+  border: var(--bw-thin) solid currentColor;
+  border-radius: var(--radius-pill);
+}
+
+/* disabled, as hatch. Lighter than the text on purpose: the words have to
+   stay readable through it. */
+.card:is([aria-disabled="true"], .is-disabled) {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 0.4375rem,
+    var(--tone-4) 0.4375rem 0.5rem
+  );
+}
